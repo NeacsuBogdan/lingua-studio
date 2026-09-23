@@ -8,13 +8,19 @@ import {
   Target,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-export default function Home() {
+import { requireOwner } from '@/server/auth/session';
+import { getOrCreateProfile } from '@/server/profile/repository';
+import { languageLabels } from '@/lib/language-labels';
+export default async function Home() {
+  const owner = await requireOwner();
+  const profile = await getOrCreateProfile(owner.id);
+  const language = languageLabels[profile.learningLanguage] ?? 'your language';
   return (
     <>
       <div className="page-heading">
         <div>
           <p className="eyebrow">YOUR NEXT CHAPTER</p>
-          <h1>Make room for English.</h1>
+          <h1>Make room for {language}.</h1>
           <p className="subtitle">
             A focused space to grow from knowing the words to owning them.
           </p>
@@ -25,9 +31,11 @@ export default function Home() {
         <section className="journey-card">
           <div className="hero-top">
             <span className="hero-label">
-              <Sparkles size={16} /> YOUR ENGLISH JOURNEY
+              <Sparkles size={16} /> YOUR {language.toUpperCase()} JOURNEY
             </span>
-            <span className="outline-pill">B2 → C1</span>
+            <span className="outline-pill">
+              {language} · {profile.targetLevel} target
+            </span>
           </div>
           <h2>
             Go further.
@@ -79,7 +87,7 @@ export default function Home() {
           </span>
           <p className="metric-label">Starting point</p>
           <h3>
-            B2 <span>self-reported</span>
+            {profile.estimatedLevel ?? '—'} <span>not assessed</span>
           </h3>
           <p>Placement assessment comes later.</p>
         </Card>
@@ -89,9 +97,9 @@ export default function Home() {
           </span>
           <p className="metric-label">On the horizon</p>
           <h3>
-            C1 <span>suggested goal</span>
+            {profile.targetLevel} <span>your target</span>
           </h3>
-          <p>Set your own target with your profile.</p>
+          <p>Change your target in Preferences.</p>
         </Card>
         <Card>
           <span className="metric-icon">
@@ -109,8 +117,10 @@ export default function Home() {
           <span className="small-label">A STRONG FOUNDATION</span>
           <h2>Your workspace is taking shape.</h2>
           <p>
-            Explore the course outline and choose your appearance. Accounts,
-            lessons, and saved learning progress are the next steps.
+            Your profile is saved.{' '}
+            {profile.learningLanguage === 'en'
+              ? 'Explore the English course outline while lessons and learning progress are being built.'
+              : `${language} course content is planned. Your saved goals will be ready when that path is built.`}
           </p>
         </div>
         <Link href="/course" className="text-link">

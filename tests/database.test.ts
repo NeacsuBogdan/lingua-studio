@@ -2,7 +2,13 @@ import { afterAll, beforeAll, it, expect } from 'vitest';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
-import { users, languages, learnerProfiles } from '../src/server/db/schema';
+import {
+  users,
+  languages,
+  learnerProfiles,
+  accounts,
+  sessions,
+} from '../src/server/db/schema';
 import { eq } from 'drizzle-orm';
 const client = new PGlite();
 const db = drizzle(client);
@@ -63,4 +69,82 @@ it('rejects invalid durations and missing language references', async () => {
       learningLanguage: 'en',
     }),
   ).rejects.toThrow();
+});
+it('persists a provider account and session, then cascades logout state with user deletion', async () => {
+  const [user] = await db
+    .insert(users)
+    .values({ email: 'auth@example.test', name: 'Learner' })
+    .returning();
+  await db.insert(accounts).values({
+    id: crypto.randomUUID(),
+    userId: user.id,
+    providerId: 'github',
+    accountId: '12345',
+  });
+  await expect(
+    db.insert(accounts).values({
+      id: crypto.randomUUID(),
+      userId: user.id,
+      providerId: 'github',
+      accountId: '12345',
+    }),
+  ).rejects.toThrow();
+  await db.insert(sessions).values({
+    id: crypto.randomUUID(),
+    userId: user.id,
+    token: 'opaque-session-token',
+    expiresAt: new Date(Date.now() + 60_000),
+  });
+  expect(
+    await db.select().from(sessions).where(eq(sessions.userId, user.id)),
+  ).toHaveLength(1);
+  await db.delete(users).where(eq(users.id, user.id));
+  expect(
+    await db.select().from(sessions).where(eq(sessions.userId, user.id)),
+  ).toHaveLength(0);
+  expect(
+    await db.select().from(accounts).where(eq(accounts.userId, user.id)),
+  ).toHaveLength(0);
+});
+it('persists learner preference edits and keeps them isolated by user', async () => {
+  const [first] = await db
+    .insert(users)
+    .values({ email: 'profile-first@example.test' })
+    .returning();
+  const [second] = await db
+    .insert(users)
+    .values({ email: 'profile-second@example.test' })
+    .returning();
+  await db.insert(learnerProfiles).values([
+    { userId: first.id, nativeLanguage: 'ro', learningLanguage: 'en' },
+    { userId: second.id, nativeLanguage: 'ro', learningLanguage: 'en' },
+  ]);
+  await db
+    .update(learnerProfiles)
+    .set({
+      targetLevel: 'C2',
+      targetExam: 'c2-proficiency',
+      dailyMinutes: 45,
+      timezone: 'Europe/London',
+    })
+    .where(eq(learnerProfiles.userId, first.id));
+  const [saved] = await db
+    .select()
+    .from(learnerProfiles)
+    .where(eq(learnerProfiles.userId, first.id));
+  const [untouched] = await db
+    .select()
+    .from(learnerProfiles)
+    .where(eq(learnerProfiles.userId, second.id));
+  expect(saved).toMatchObject({
+    targetLevel: 'C2',
+    targetExam: 'c2-proficiency',
+    dailyMinutes: 45,
+    timezone: 'Europe/London',
+  });
+  expect(untouched).toMatchObject({
+    targetLevel: 'C1',
+    targetExam: null,
+    dailyMinutes: 20,
+  });
 });
