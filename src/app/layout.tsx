@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { ThemeProvider } from '@/components/theme-provider';
-import { Navigation } from '@/components/navigation';
 import { readEnv } from '@/lib/env';
 import './globals.css';
 export const metadata: Metadata = {
@@ -23,24 +22,7 @@ export default function RootLayout({
           <a href="#main" className="skip-link">
             Skip to content
           </a>
-          <div className="app-shell">
-            <Navigation />
-            <div className="main-shell">
-              <header className="topbar">
-                <span>Personal learning studio</span>
-                <span className="language-pill">
-                  EN <span>English</span>
-                </span>
-              </header>
-              <main id="main" tabIndex={-1}>
-                {children}
-              </main>
-              <footer>
-                Built for understanding, one day at a time.
-                <span>Foundation edition · 01</span>
-              </footer>
-            </div>
-          </div>
+          {children}
         </ThemeProvider>
       </body>
     </html>

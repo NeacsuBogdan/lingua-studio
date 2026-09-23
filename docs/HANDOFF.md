@@ -1,40 +1,30 @@
 # Session handoff — 2026-09-24
 
-## Actual state
+## Current state
 
-Phase 0 and Phase 1 are complete. Phase 2 implementation is starting. The application currently shows a public overview, English curriculum outline and appearance settings; it has no authentication or persisted learning data yet.
+Phases 0–2 are complete. Phase 2 was finished on `feat/phase-2-auth-profile`; Phase 3 remains planned and was not started. The owner's real GitHub account authenticated against the Neon development database. The final live test signed out, leaving the owner profile in place and zero active owner sessions. Sign in again to use the app.
 
-## Work completed in the Windows checkout
+## Implementation and fixes
 
-- Restored the supplied Git history bundle in the existing working directory without overwriting source files. No remote is configured.
-- Installed Playwright Chromium and isolated E2E on a production server at `127.0.0.1:3100`, with no reuse of an unrelated port 3000 server.
-- Extended E2E for both system themes, theme selection and reload persistence, keyboard focus, desktop/mobile and 320px reflow, console errors, screenshots and axe WCAG checks. Theme behavior works in the local browser; no source theme bug was reproduced.
-- Reviewed the four moderate npm audit findings. All came through Drizzle Kit's development-only `@esbuild-kit/core-utils` → old esbuild chain. A targeted esbuild override resolved them; `npm audit` and `npm audit --omit=dev` each reported zero findings. `npm run db:generate` still works and generated no migration change.
-- Added a read-only `db:inspect` command reporting the database name, PostgreSQL version, client TLS policy and table names. Added `docs/NEON-SETUP.md` for the selected development provider and updated README.
-- Visual inspection of overview, course and preferences screenshots in light/dark, desktop/mobile and 320px found no clipped text or layout break. Automated checks found no horizontal overflow.
+- Better Auth uses GitHub OAuth, the Next.js auth route and the existing Drizzle/PostgreSQL client. Password sign-up and other social providers are disabled. The OAuth account must have the configured stable numeric GitHub ID and a verified email.
+- Protected pages and the profile write action check the server-side session and linked GitHub account. The authenticated name and saved profile replace presentation-only identity and targets.
+- The profile form saves language choices, CEFR target, optional English Cambridge exam, daily study duration and IANA timezone through Zod validation. The submit handler preserves the chosen value immediately after save and refreshes server data. An expired session returns to sign-in.
+- Migration `0001` added auth tables. Live OAuth initiation exposed a missing ID default on `verifications`; migration `0002` added database-generated UUID text defaults to verification, account and session IDs. Both are applied to Neon development, and repeating migration succeeds.
+- Auth error logging now emits a generic message so a database failure cannot print OAuth state or PKCE parameters through the library logger.
+- `.env.local` is Git ignored. The owner configured the database, auth secret, GitHub client credentials and numeric owner ID locally. No long-lived credential is stored in source control.
 
 ## Validation
 
-- Node 22.19.0, npm 10.9.3, installed package versions consistent with lockfile. PowerShell requires `npm.cmd` / `npx.cmd` because `.ps1` scripts are blocked by execution policy.
-- `npm run lint`: passed.
-- `npm run typecheck`: passed.
-- `npm test`: 11 tests, 2 suites passed, including PGlite migrations and constraints.
-- `npm run format:check`: passed.
-- `npm run test:e2e`: 8 tests passed across desktop and mobile after Chromium installation and accessibility extension.
-- `npm run db:generate`: passed; no schema changes.
-- `npm audit` and `npm audit --omit=dev`: zero findings after the override.
-- `npm run build`: passed with the configured Neon development URL.
-- `db:check` and `db:inspect`: passed on Neon PostgreSQL 17. The client used `verify-full` TLS. The initially empty database received the reviewed migration and reference seed; repeating both succeeded. No personal account rows were created.
+- The production build's OAuth initiation returned 200, directed to GitHub, used `http://127.0.0.1:3000/api/auth/callback/github`, and set an OAuth state cookie. The owner completed the real GitHub authorization and reached the dashboard.
+- Neon showed one owner GitHub account, one active session and one learner profile. The session remained valid across refresh, navigation and multiple server restarts.
+- The owner edited the daily target. Neon and the form agreed immediately after save and after refresh; the final chosen value is 20 minutes.
+- A temporary **process-only** mismatched owner ID denied the still-active browser session and redirected `/settings` to `/sign-in`. Restoring the real ID restored access without a new OAuth grant. This tested live server-side ownership without creating a second account or altering `.env.local`.
+- Sign-out removed the active owner session from Neon. Direct visits to `/settings` and `/course` then redirected to `/sign-in`; the profile row remained.
+- A Better Auth + PGlite integration test verifies that a signed active session is accepted and the same signed cookie is rejected after the database expiry time. Other PGlite tests cover migrations, defaults, constraints, profile isolation and owner policy.
+- Final checks: lint, typecheck, Prettier, 22 unit/integration tests across 4 suites, 10 desktop/mobile Playwright E2E tests, production build, `db:check`, `db:inspect`, `db:generate` (no pending SQL), repeatable `db:migrate`, and npm audit (zero findings).
 
-## External gate and exact next actions
+## Notes for the next session
 
-The user configured a valid Neon `DATABASE_URL` in `.env.local`. No credential value was printed. The initial database and browser gates passed. The next external inputs for Phase 2 are GitHub OAuth credentials and the owner's GitHub identity.
+The negative owner test used a real session with a temporary mismatched server allowlist; a second GitHub account was not used. No fake authentication path was added. The live browser steps required the owner's interaction with GitHub. The Playwright suite remains isolated on port 3100 and covers unauthenticated boundaries; the authenticated browser observations above were checked manually and against Neon. The local production server used for validation should be stopped after final checks.
 
-Phase 2 execution:
-
-1. Implement secure owner-only login/session, route and operation authorization, persistent validated learner profile, migrations and tests.
-2. Configure GitHub OAuth credentials in `.env.local` and validate a real login against Neon. Do not label Phase 2 complete without this live validation.
-
-## Notes
-
-The repository has local changes from this work pending commit; preserve them. `.env.local`, dependencies, build artifacts and screenshots are Git ignored. Do not commit the original master prompt accidentally if it remains untracked. The Phase 1 migration and language seed are applied to the Neon development database. No auth migration or cloud deployment has been applied yet.
+Keep work on a feature branch. Do not commit `.env.local`. Phase 3 may be planned in the next session, but do not treat an English outline as working lessons or fabricate progress.

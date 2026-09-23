@@ -8,12 +8,13 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
+import { SignOutButton } from './sign-out-button';
 const links = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
   { href: '/course', label: 'Learning path', icon: Route },
   { href: '/settings', label: 'Preferences', icon: SlidersHorizontal },
 ];
-export function Navigation() {
+export function Navigation({ displayName }: { displayName: string }) {
   const pathname = usePathname();
   return (
     <aside className="sidebar">
@@ -45,14 +46,17 @@ export function Navigation() {
           A little practice.
           <br />A wider world.
         </p>
-        <span>English · A1 to C2</span>
+        <span>Learn at your own pace</span>
       </div>
       <div className="sidebar-bottom">
         <ThemeToggle />
+        <SignOutButton />
         <div className="profile">
-          <span className="avatar">B</span>
+          <span className="avatar">
+            {displayName.slice(0, 1).toUpperCase()}
+          </span>
           <div>
-            <strong>Bogdan</strong>
+            <strong>{displayName}</strong>
             <small>Personal workspace</small>
           </div>
         </div>

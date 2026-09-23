@@ -1,7 +1,7 @@
 {
   "name": "lingua-studio",
   "version": "0.1.0",
-  "description": "Personal language learning platform — phases 0 and 1",
+  "description": "Personal language learning platform — phase 2 in progress",
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "build": "next build",
@@ -24,6 +24,7 @@
   "type": "module",
   "dependencies": {
     "@next/env": "^16.3.6",
+    "better-auth": "^1.7.5",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.3",
     "lucide-react": "^1.47.0",
