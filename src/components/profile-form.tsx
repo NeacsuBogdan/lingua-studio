@@ -1,5 +1,6 @@
 'use client';
-import { useActionState } from 'react';
+import { useState, useTransition, type FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import type { InferSelectModel } from 'drizzle-orm';
 import type { learnerProfiles } from '@/server/db/schema';
 import {
@@ -17,21 +18,54 @@ const languages = [
 const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 const durations = [5, 10, 20, 30, 45, 60] as const;
 const initialState: SaveProfileState = { status: 'idle', message: '' };
+type Profile = InferSelectModel<typeof learnerProfiles>;
 
-export function ProfileForm({
-  profile,
-}: {
-  profile: InferSelectModel<typeof learnerProfiles>;
-}) {
-  const [state, action, pending] = useActionState(saveProfile, initialState);
+function formValues(profile: Profile) {
+  return {
+    nativeLanguage: profile.nativeLanguage,
+    learningLanguage: profile.learningLanguage,
+    targetLevel: profile.targetLevel,
+    targetExam: profile.targetExam ?? '',
+    dailyMinutes: String(profile.dailyMinutes),
+    timezone: profile.timezone,
+  };
+}
+
+export function ProfileForm({ profile }: { profile: Profile }) {
+  const router = useRouter();
+  const [state, setState] = useState(initialState);
+  const [pending, startTransition] = useTransition();
+  const [values, setValues] = useState(() => formValues(profile));
+  function change(field: keyof ReturnType<typeof formValues>, value: string) {
+    setValues((previous) => ({ ...previous, [field]: value }));
+  }
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    setState(initialState);
+    startTransition(async () => {
+      try {
+        const result = await saveProfile(data);
+        setState(result);
+        if (result.status === 'saved') router.refresh();
+        if (result.status === 'unauthorized') router.replace('/sign-in');
+      } catch {
+        setState({
+          status: 'invalid',
+          message: 'Unable to save. Please try again.',
+        });
+      }
+    });
+  }
   return (
-    <form action={action} className="profile-form">
+    <form onSubmit={submit} className="profile-form">
       <div className="profile-fields">
         <label>
           Native language
           <select
             name="nativeLanguage"
-            defaultValue={profile.nativeLanguage}
+            value={values.nativeLanguage}
+            onChange={(event) => change('nativeLanguage', event.target.value)}
             required
           >
             {languages.map(([code, name]) => (
@@ -45,7 +79,8 @@ export function ProfileForm({
           Learning language
           <select
             name="learningLanguage"
-            defaultValue={profile.learningLanguage}
+            value={values.learningLanguage}
+            onChange={(event) => change('learningLanguage', event.target.value)}
             required
           >
             {languages.map(([code, name]) => (
@@ -59,7 +94,8 @@ export function ProfileForm({
           Target CEFR level
           <select
             name="targetLevel"
-            defaultValue={profile.targetLevel}
+            value={values.targetLevel}
+            onChange={(event) => change('targetLevel', event.target.value)}
             required
           >
             {levels.map((level) => (
@@ -69,7 +105,11 @@ export function ProfileForm({
         </label>
         <label>
           Cambridge target
-          <select name="targetExam" defaultValue={profile.targetExam ?? ''}>
+          <select
+            name="targetExam"
+            value={values.targetExam}
+            onChange={(event) => change('targetExam', event.target.value)}
+          >
             <option value="">No exam target yet</option>
             <option value="b2-first">B2 First</option>
             <option value="c1-advanced">C1 Advanced</option>
@@ -80,7 +120,8 @@ export function ProfileForm({
           Daily study target
           <select
             name="dailyMinutes"
-            defaultValue={profile.dailyMinutes}
+            value={values.dailyMinutes}
+            onChange={(event) => change('dailyMinutes', event.target.value)}
             required
           >
             {durations.map((minutes) => (
@@ -94,7 +135,8 @@ export function ProfileForm({
           Time zone
           <input
             name="timezone"
-            defaultValue={profile.timezone}
+            value={values.timezone}
+            onChange={(event) => change('timezone', event.target.value)}
             required
             maxLength={80}
             autoComplete="off"
@@ -116,7 +158,11 @@ export function ProfileForm({
       {state.message && (
         <p
           role="status"
-          className={state.status === 'invalid' ? 'form-error' : 'form-success'}
+          className={
+            state.status === 'invalid' || state.status === 'unauthorized'
+              ? 'form-error'
+              : 'form-success'
+          }
         >
           {state.message}
         </p>

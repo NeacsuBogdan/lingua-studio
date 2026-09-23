@@ -40,7 +40,9 @@ export const users = pgTable(
 export const sessions = pgTable(
   'sessions',
   {
-    id: text('id').primaryKey(),
+    id: text('id')
+      .default(sql`gen_random_uuid()::text`)
+      .primaryKey(),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
@@ -60,7 +62,9 @@ export const sessions = pgTable(
 export const accounts = pgTable(
   'accounts',
   {
-    id: text('id').primaryKey(),
+    id: text('id')
+      .default(sql`gen_random_uuid()::text`)
+      .primaryKey(),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
@@ -92,7 +96,9 @@ export const accounts = pgTable(
   ],
 );
 export const verifications = pgTable('verifications', {
-  id: text('id').primaryKey(),
+  id: text('id')
+    .default(sql`gen_random_uuid()::text`)
+    .primaryKey(),
   identifier: text('identifier').notNull(),
   value: text('value').notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),

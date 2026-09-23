@@ -8,6 +8,7 @@ import {
   learnerProfiles,
   accounts,
   sessions,
+  verifications,
 } from '../src/server/db/schema';
 import { eq } from 'drizzle-orm';
 const client = new PGlite();
@@ -76,21 +77,18 @@ it('persists a provider account and session, then cascades logout state with use
     .values({ email: 'auth@example.test', name: 'Learner' })
     .returning();
   await db.insert(accounts).values({
-    id: crypto.randomUUID(),
     userId: user.id,
     providerId: 'github',
     accountId: '12345',
   });
   await expect(
     db.insert(accounts).values({
-      id: crypto.randomUUID(),
       userId: user.id,
       providerId: 'github',
       accountId: '12345',
     }),
   ).rejects.toThrow();
   await db.insert(sessions).values({
-    id: crypto.randomUUID(),
     userId: user.id,
     token: 'opaque-session-token',
     expiresAt: new Date(Date.now() + 60_000),
@@ -105,6 +103,17 @@ it('persists a provider account and session, then cascades logout state with use
   expect(
     await db.select().from(accounts).where(eq(accounts.userId, user.id)),
   ).toHaveLength(0);
+});
+it('generates database IDs for OAuth verification, account and session rows', async () => {
+  const [verification] = await db
+    .insert(verifications)
+    .values({
+      identifier: 'oauth-state-test',
+      value: '{}',
+      expiresAt: new Date(Date.now() + 60_000),
+    })
+    .returning();
+  expect(verification.id).toMatch(/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i);
 });
 it('persists learner preference edits and keeps them isolated by user', async () => {
   const [first] = await db

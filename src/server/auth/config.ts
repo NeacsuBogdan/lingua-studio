@@ -10,6 +10,11 @@ const ready = authSetupReady();
 
 export const auth = betterAuth({
   appName: 'Lingua Studio',
+  logger: {
+    log(level) {
+      if (level === 'error') console.error('Authentication request failed.');
+    },
+  },
   baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(getDb(), {

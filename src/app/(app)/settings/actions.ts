@@ -1,19 +1,22 @@
 'use server';
 import { revalidatePath } from 'next/cache';
 import { profileInputSchema } from '@/lib/profile-schema';
-import { requireOwner } from '@/server/auth/session';
+import { getOwner } from '@/server/auth/session';
 import { updateProfile } from '@/server/profile/repository';
 
 export type SaveProfileState = {
-  status: 'idle' | 'saved' | 'invalid';
+  status: 'idle' | 'saved' | 'invalid' | 'unauthorized';
   message: string;
 };
 
-export async function saveProfile(
-  _previous: SaveProfileState,
-  data: FormData,
-): Promise<SaveProfileState> {
-  const owner = await requireOwner();
+export async function saveProfile(data: FormData): Promise<SaveProfileState> {
+  const owner = await getOwner();
+  if (!owner) {
+    return {
+      status: 'unauthorized',
+      message: 'Your session ended. Sign in again.',
+    };
+  }
   const result = profileInputSchema.safeParse({
     nativeLanguage: data.get('nativeLanguage'),
     learningLanguage: data.get('learningLanguage'),

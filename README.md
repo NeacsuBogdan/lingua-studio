@@ -1,6 +1,6 @@
 # Lingua Studio
 
-Personal language-learning application. Phase 0 and Phase 1 are complete. Phase 2 implements owner-only authentication and a persisted learner profile; the live GitHub OAuth gate remains open until the owner configures credentials and signs in. Lessons and progress are future phases.
+Personal language-learning application. Phases 0–2 are complete: the owner's GitHub account signs in through OAuth, sessions persist in PostgreSQL, and learner preferences are saved in Neon. Lessons and learning progress are future phases.
 
 ## Local setup
 
@@ -42,7 +42,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Playwright starts an isolated production server on `127.0.0.1:3100` and refuses to reuse an existing server. The browser suite checks the unauthenticated boundary, public sign-in accessibility, theme and mobile reflow. The unit/integration suite uses disposable PGlite databases; it does not touch Neon. Live OAuth, authenticated profile editing, session persistence across reload, and logout require the owner's GitHub OAuth configuration and manual browser verification.
+Playwright starts an isolated production server on `127.0.0.1:3100` and refuses to reuse an existing server. The browser suite checks the unauthenticated boundary, public sign-in accessibility, theme and mobile reflow. The unit/integration suite uses disposable PGlite databases; it does not touch Neon. A live owner browser run on the production build verified the GitHub callback, persistence across refresh, navigation and server restarts, profile updates in Neon, owner-ID enforcement and logout. See [the handoff](docs/HANDOFF.md) for the exact observations. The GitHub OAuth interaction itself remains a manual browser check because it requires the owner's authorization.
 
 The learning profile stores native/learning language, target CEFR level, optional English Cambridge exam, daily study duration, and IANA timezone. Non-English languages can be selected, but their course content is not yet available. The current English route is an outline, not a working lesson system. Appearance remains a browser-local preference.
 
