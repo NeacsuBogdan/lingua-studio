@@ -1,38 +1,40 @@
-# Session handoff — 2026-09-23
+# Session handoff — 2026-09-24
 
-## Completed
+## Actual state
 
-Phase 0: architecture, stack, initial data/content models, design direction, roadmap.
-Phase 1 implementation: Next.js App Router, strict TS, Tailwind, responsive shell, overview/course outline/preferences routes, theme provider, loading/error/404 pages, environment validation, server-only Drizzle adapter, initial SQL migration, reference seed, test tooling.
+Phase 0 and Phase 1 are complete. Phase 2 implementation is starting. The application currently shows a public overview, English curriculum outline and appearance settings; it has no authentication or persisted learning data yet.
 
-## Validated
+## Work completed in the Windows checkout
 
-- `npm run build`: passed (Next.js 16.3.6; overview/course/settings generated).
-- `npm run lint`: passed, no warnings.
+- Restored the supplied Git history bundle in the existing working directory without overwriting source files. No remote is configured.
+- Installed Playwright Chromium and isolated E2E on a production server at `127.0.0.1:3100`, with no reuse of an unrelated port 3000 server.
+- Extended E2E for both system themes, theme selection and reload persistence, keyboard focus, desktop/mobile and 320px reflow, console errors, screenshots and axe WCAG checks. Theme behavior works in the local browser; no source theme bug was reproduced.
+- Reviewed the four moderate npm audit findings. All came through Drizzle Kit's development-only `@esbuild-kit/core-utils` → old esbuild chain. A targeted esbuild override resolved them; `npm audit` and `npm audit --omit=dev` each reported zero findings. `npm run db:generate` still works and generated no migration change.
+- Added a read-only `db:inspect` command reporting the database name, PostgreSQL version, client TLS policy and table names. Added `docs/NEON-SETUP.md` for the selected development provider and updated README.
+- Visual inspection of overview, course and preferences screenshots in light/dark, desktop/mobile and 320px found no clipped text or layout break. Automated checks found no horizontal overflow.
+
+## Validation
+
+- Node 22.19.0, npm 10.9.3, installed package versions consistent with lockfile. PowerShell requires `npm.cmd` / `npx.cmd` because `.ps1` scripts are blocked by execution policy.
+- `npm run lint`: passed.
 - `npm run typecheck`: passed.
-- `npm test`: 11 passing tests across 2 suites, including real SQL migrations/constraints in PGlite.
+- `npm test`: 11 tests, 2 suites passed, including PGlite migrations and constraints.
 - `npm run format:check`: passed.
-- Cloud browser: overview rendered; navigation to course outline and preferences confirmed through DOM checks.
+- `npm run test:e2e`: 8 tests passed across desktop and mobile after Chromium installation and accessibility extension.
+- `npm run db:generate`: passed; no schema changes.
+- `npm audit` and `npm audit --omit=dev`: zero findings after the override.
+- `npm run build`: passed with the configured Neon development URL.
+- `db:check` and `db:inspect`: passed on Neon PostgreSQL 17. The client used `verify-full` TLS. The initially empty database received the reviewed migration and reference seed; repeating both succeeded. No personal account rows were created.
 
-## Incomplete validation / honest boundaries
+## External gate and exact next actions
 
-- No external PostgreSQL URL supplied. postgres.js TCP/TLS connection and cloud persistence remain unverified. PGlite integration tests are not equivalent to that gate.
-- Playwright Chromium download returned an invalid/truncated archive, so the checked-in desktop/mobile E2E suite could not execute.
-- Cloud browser screenshot capture timed out. No visual/mobile QA sign-off.
-- Theme control is implemented using next-themes, but clicks in the cloud preview did not demonstrate a changed theme attribute. Treat theme interaction/persistence as UNVERIFIED and investigate hydration/browser runtime before signing off Phase 1. Do not claim it is confirmed working.
-- Phase 1 therefore remains open. No Phase 2 work started.
+The user configured a valid Neon `DATABASE_URL` in `.env.local`. No credential value was printed. The initial database and browser gates passed. The next external inputs for Phase 2 are GitHub OAuth credentials and the owner's GitHub identity.
 
-## Current state
+Phase 2 execution:
 
-Can run the foundation locally using npm ci && npm run dev. Overview shows explicit empty state; course page is an outline, not a working lesson engine. No authentication, learner progress, review scheduling or exam exercises yet. No deployment or external Git remote exists. Source and a Git bundle are delivered together to preserve continuity.
+1. Implement secure owner-only login/session, route and operation authorization, persistent validated learner profile, migrations and tests.
+2. Configure GitHub OAuth credentials in `.env.local` and validate a real login against Neon. Do not label Phase 2 complete without this live validation.
 
-## Next
+## Notes
 
-1. Run the existing browser suite in an environment with Chromium; validate theme change/persistence, hydration, mobile overflow and visual layout. Fix any confirmed source issues.
-2. Configure DATABASE_URL through .env.local or secret settings (do not paste secrets into chat). Run db:check, db:migrate, db:seed.
-3. Mark remaining Phase 1 gates complete only after successful results.
-4. Phase 2: secure personal authentication, persistent sessions, route protection and validated profile settings. Obtain OAuth provider configuration only when implementation is ready.
-
-## Engineering notes
-
-scripts/dev.mjs translates the supervised preview's --host/--strictPort flags to Next.js-compatible flags; ordinary npm run dev still works. The project remains Next.js, not Vinext. Use npm, preserve package-lock.json. .env files, build products, dependencies and test artifacts are ignored. next-env.d.ts is generated and excluded from formatting checks.
+The repository has local changes from this work pending commit; preserve them. `.env.local`, dependencies, build artifacts and screenshots are Git ignored. Do not commit the original master prompt accidentally if it remains untracked. The Phase 1 migration and language seed are applied to the Neon development database. No auth migration or cloud deployment has been applied yet.

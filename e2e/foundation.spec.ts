@@ -1,4 +1,80 @@
 import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`system ${theme} appearance, keyboard access and responsive pages`, async ({
+    page,
+  }, testInfo) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    page.on('console', (message) => {
+      if (message.type() === 'error') errors.push(message.text());
+    });
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await page.goto('/settings');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+    await page.keyboard.press('Tab');
+    await expect(
+      page.getByRole('link', { name: 'Skip to content' }),
+    ).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('main')).toBeFocused();
+    await page.keyboard.press('Tab');
+    const toggle = page
+      .locator('main')
+      .getByRole('button', { name: 'Toggle color theme' });
+    await expect(toggle).toBeFocused();
+    await expect(toggle).toHaveCSS('outline-style', 'solid');
+    await page.keyboard.press('Enter');
+    const selectedTheme = theme === 'light' ? 'dark' : 'light';
+    await expect(page.locator('html')).toHaveAttribute(
+      'data-theme',
+      selectedTheme,
+    );
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute(
+      'data-theme',
+      selectedTheme,
+    );
+    await toggle.click();
+    for (const route of ['/', '/course', '/settings']) {
+      await page.goto(route);
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      const accessibility = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze();
+      expect(accessibility.violations).toEqual([]);
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      await page.screenshot({
+        path: testInfo.outputPath(
+          `${route.replaceAll('/', '') || 'overview'}-${theme}.png`,
+        ),
+        fullPage: true,
+      });
+      // 320 CSS pixels also exercises reflow equivalent to 400% zoom at 1280px.
+      const originalViewport = page.viewportSize()!;
+      await page.setViewportSize({ width: 320, height: 800 });
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      await page.screenshot({
+        path: testInfo.outputPath(
+          `${route.replaceAll('/', '') || 'overview'}-${theme}-320.png`,
+        ),
+        fullPage: true,
+      });
+      await page.setViewportSize(originalViewport);
+    }
+    expect(errors).toEqual([]);
+  });
+}
+
 test('navigate the honest foundation and retain appearance', async ({
   page,
 }) => {

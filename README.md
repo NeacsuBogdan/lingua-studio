@@ -6,6 +6,8 @@ Personal English-learning platform. This repository contains **Phase 0 + Phase 1
 
 Requires Node.js 22+ (Node 24 used for validation) and npm.
 
+Windows continuation validated with Node 22.19.0 and npm 10.9.3. In PowerShell use `npm.cmd` / `npx.cmd` if execution policy blocks their `.ps1` wrappers; no policy change is needed.
+
 ```sh
 npm ci
 npm run dev
@@ -25,14 +27,17 @@ npm run test:e2e
 npm run format:check
 ```
 
-E2E starts the production server automatically after a build. On Linux you may need `npx playwright install --with-deps chromium`. Integration tests run migrations and queries in disposable PGlite databases and require no external database.
+E2E starts the production server automatically after a build on `127.0.0.1:3100` and refuses to reuse an existing server. Keep that port free; the development server on port 3000 is independent. Tests cover both themes, system preference, persistence, keyboard navigation, 320px reflow, console errors and axe accessibility checks. Screenshots are saved under ignored `test-results/`. On Linux you may need `npx playwright install --with-deps chromium`. Integration tests run migrations and queries in disposable PGlite databases and require no external database.
 
 ## PostgreSQL
+
+For the selected provider, follow [the Neon setup guide](docs/NEON-SETUP.md). Use a dedicated development database and inspect it before migrating.
 
 Copy `.env.example` to `.env.local` and set DATABASE_URL to your PostgreSQL connection string (Neon/Supabase or local PostgreSQL). Use the provider's required TLS settings. Never commit this file. For Vercel use a suitable pooled connection string; the postgres.js client disables prepared statements and limits connections.
 
 ```sh
 npm run db:check
+npm run db:inspect
 npm run db:migrate
 npm run db:seed
 ```
