@@ -1,0 +1,1993 @@
+You are acting as a senior software architect, senior full-stack engineer, product designer, UX designer, learning-platform architect, language-learning specialist, QA engineer, and technical project lead.
+
+Your task is to DESIGN, BUILD, TEST, DOCUMENT, and PREPARE FOR DEPLOYMENT a complete personal language-learning web application.
+
+This is not a prototype, landing page, or static mockup.
+
+The objective is to progressively build a real, polished, maintainable application that I can actually use every day.
+
+Do not try to build everything at once.
+
+Work through the project in clearly defined phases, finish and validate each phase before moving to the next one, and continuously maintain the existing application as new systems are added.
+
+---
+
+# 1. PRODUCT VISION
+
+Build a premium personal language-learning platform inspired by the strengths of products such as:
+
+- Duolingo
+- Busuu
+- Babbel
+- Anki
+- Quizlet
+- Cambridge English preparation platforms
+- modern AI tutoring systems
+
+However, do NOT clone any of them.
+
+The platform should feel more serious, elegant, intelligent, and academically useful.
+
+The long-term objective is to support:
+
+1. English
+2. Japanese
+3. Spanish
+4. Italian
+
+English is the FIRST and primary implementation.
+
+The English version must eventually be capable of taking a learner from their current level through advanced English and preparing them seriously for Cambridge English examinations.
+
+The architecture must allow additional languages to be added without rewriting the entire application.
+
+---
+
+# 2. PRIMARY USER
+
+This application is initially designed for ONE user: me.
+
+However, architect the database and application cleanly enough that multiple users could be supported later.
+
+My approximate English level is around B2.
+
+My goal is not simply conversational English.
+
+I want:
+
+- excellent grammar
+- large active vocabulary
+- excellent comprehension
+- better natural expression
+- good writing
+- strong listening
+- strong pronunciation
+- confident speaking
+- preparation for Cambridge exams
+- measurable progression toward C1/C2
+
+Do NOT assume a single Cambridge exam permanently.
+
+The system should eventually support preparation modes for:
+
+- B2 First
+- C1 Advanced
+- C2 Proficiency
+
+The target exam should be configurable from the user's profile/settings.
+
+---
+
+# 3. CORE PRODUCT PRINCIPLES
+
+Every implementation decision should follow these principles.
+
+## 3.1 Learning quality over gamification
+
+Gamification should support learning, not replace it.
+
+Points, streaks, XP, levels, achievements, progress bars, and similar elements are useful, but actual language competence is the main objective.
+
+## 3.2 Active recall
+
+The learner should frequently have to produce an answer rather than simply recognize one.
+
+## 3.3 Spaced repetition
+
+Vocabulary, grammar mistakes, phrases, and difficult concepts should return automatically based on performance.
+
+## 3.4 Adaptive difficulty
+
+The system should become aware of:
+
+- strengths
+- weaknesses
+- repeated mistakes
+- forgotten vocabulary
+- grammar problems
+- weak skills
+- strong skills
+
+and adjust review material accordingly.
+
+## 3.5 Context over isolated words
+
+Vocabulary should normally be learned through:
+
+- sentences
+- contexts
+- collocations
+- idioms
+- dialogues
+- short texts
+- realistic situations
+
+rather than only word → translation cards.
+
+## 3.6 Explain mistakes
+
+For important exercises, do not merely show that an answer is incorrect.
+
+Explain:
+
+- what is wrong
+- why it is wrong
+- what the correct version is
+- what rule applies
+- another example
+
+## 3.7 Progressive difficulty
+
+Lessons must progress logically through CEFR levels:
+
+A1 → A2 → B1 → B2 → C1 → C2
+
+while allowing the learner to test into a higher starting position.
+
+## 3.8 Professional design
+
+The product should visually feel like a premium modern SaaS application rather than a student project.
+
+---
+
+# 4. COST CONSTRAINT
+
+The initial version should have essentially no mandatory recurring infrastructure cost for personal usage.
+
+Prefer free tiers whenever realistically possible.
+
+Target deployment:
+
+- Vercel for the web application
+- a free-tier PostgreSQL provider such as Neon or Supabase if appropriate
+
+IMPORTANT:
+
+Do NOT make the core application dependent on a paid OpenAI API or another paid AI API.
+
+The ChatGPT Work environment can be used DURING DEVELOPMENT to:
+
+- design curricula
+- generate lesson content
+- generate vocabulary datasets
+- create grammar explanations
+- create exercise banks
+- produce example sentences
+- create reading material
+- create structured learning content
+
+Store that generated content in the application's own content/data system.
+
+The deployed app should therefore initially work without paying for AI inference on every lesson.
+
+However, design an OPTIONAL AI provider abstraction so that live AI tutoring can be added later.
+
+Examples of future AI functions:
+
+- conversational tutor
+- writing correction
+- dynamic exercise generation
+- speaking feedback
+- explanations
+- personalized lesson generation
+
+These must be optional modules, not core requirements for V1.
+
+---
+
+# 5. PREFERRED TECHNOLOGY STACK
+
+Unless there is a strong technical reason to change something, use:
+
+Frontend / Full-stack framework:
+- Next.js
+- latest stable App Router
+- React
+- TypeScript
+- strict TypeScript
+
+Styling:
+- Tailwind CSS
+- modern component architecture
+
+UI:
+- preferably shadcn/ui or similarly maintainable primitives
+- accessible components
+- responsive design
+
+Database:
+- PostgreSQL
+
+ORM:
+- Drizzle ORM or Prisma
+
+Choose whichever creates the cleaner architecture, but explain the decision once and then proceed.
+
+Authentication:
+- secure authentication appropriate for Next.js
+- credentials or magic-link/social authentication can be chosen based on free-tier practicality
+
+Validation:
+- Zod
+
+Forms:
+- React Hook Form where useful
+
+Testing:
+- unit tests
+- integration tests
+- critical E2E tests
+
+Recommended tools can include:
+
+- Vitest
+- React Testing Library
+- Playwright
+
+Code quality:
+- ESLint
+- Prettier
+- strict typing
+- clean imports
+- clean folder structure
+
+Deployment:
+- Vercel
+
+The project should be easy to run locally.
+
+Provide:
+
+- .env.example
+- README
+- setup instructions
+- database migration instructions
+
+Never commit secrets.
+
+---
+
+# 6. DESIGN DIRECTION
+
+The visual style should feel:
+
+- premium
+- clean
+- modern
+- immersive
+- calm
+- sophisticated
+- slightly futuristic
+- highly polished
+
+Avoid a childish visual language.
+
+Do not overload the interface with cartoon graphics.
+
+Use excellent:
+
+- typography
+- hierarchy
+- whitespace
+- cards
+- transitions
+- progress visualization
+- subtle animations
+- micro-interactions
+
+Support:
+
+- desktop
+- tablet
+- mobile
+
+Create both:
+
+- light theme
+- dark theme
+
+The dashboard should make me WANT to open the application every day.
+
+Animation must remain subtle and purposeful.
+
+---
+
+# 7. INFORMATION ARCHITECTURE
+
+The product should eventually contain these major sections:
+
+- Dashboard
+- Learn
+- Course Map
+- Daily Lesson
+- Vocabulary
+- Grammar
+- Listening
+- Reading
+- Writing
+- Speaking
+- Pronunciation
+- Review
+- Mistakes
+- Cambridge Exam Prep
+- Mock Exams
+- Progress
+- Statistics
+- Achievements
+- Profile
+- Settings
+
+Do not implement all of them immediately.
+
+Introduce them gradually according to the roadmap below.
+
+---
+
+# 8. USER PROFILE
+
+Create a learner profile capable of storing information such as:
+
+- native language
+- learning language
+- current estimated CEFR level
+- target CEFR level
+- target Cambridge examination
+- preferred daily study duration
+- timezone
+- study streak
+- total study time
+- XP
+- level
+- vocabulary learned
+- vocabulary mastery
+- weak grammar topics
+- skill scores
+- placement assessment results
+
+Design this extensibly.
+
+---
+
+# 9. LEARNING SKILLS
+
+Track the following independently:
+
+- Vocabulary
+- Grammar
+- Reading
+- Listening
+- Writing
+- Speaking
+- Pronunciation
+
+Each should have its own progress metrics.
+
+Also calculate an overall estimated level.
+
+Do not pretend these scores are official CEFR certifications.
+
+They are internal learning estimates.
+
+---
+
+# 10. LESSON MODEL
+
+Create a reusable lesson engine.
+
+Lessons should be composed of small activity blocks rather than hardcoded pages.
+
+Example lesson structure:
+
+Lesson
+→ introduction
+→ explanation
+→ examples
+→ guided practice
+→ active recall
+→ contextual exercise
+→ challenge
+→ summary
+→ review items
+
+Possible activity types should eventually include:
+
+- multiple choice
+- choose missing word
+- type missing word
+- full sentence typing
+- sentence reorder
+- matching
+- translation
+- error correction
+- vocabulary recall
+- listening transcription
+- listening comprehension
+- reading comprehension
+- grammar transformation
+- sentence rewriting
+- word formation
+- open cloze
+- multiple-choice cloze
+- writing prompt
+- speaking prompt
+- pronunciation prompt
+
+Build the exercise system using reusable schemas/components.
+
+Do NOT make a separate custom React component for every individual lesson.
+
+---
+
+# 11. CONTENT ARCHITECTURE
+
+Separate learning CONTENT from application CODE.
+
+Design a structured content format.
+
+For example, a lesson could internally resemble:
+
+course
+unit
+lesson
+activities
+explanations
+examples
+answers
+feedback
+difficulty
+CEFR level
+skill tags
+grammar tags
+vocabulary tags
+
+The exact schema should be designed professionally.
+
+Content should be easy to:
+
+- edit
+- generate
+- validate
+- migrate
+- expand
+- translate
+- add for other languages
+
+Consider JSON/MDX/database-backed content and choose the most maintainable solution.
+
+---
+
+# 12. ENGLISH CURRICULUM
+
+Design the curriculum before generating hundreds of lessons.
+
+The English curriculum should cover CEFR progression.
+
+High-level categories:
+
+## Vocabulary
+
+Daily life
+People
+Family
+Relationships
+Home
+Food
+Travel
+Work
+Technology
+Education
+Health
+Nature
+Society
+Culture
+Media
+Science
+Business
+Abstract concepts
+Academic vocabulary
+Idioms
+Phrasal verbs
+Collocations
+Word families
+Register
+Formal vs informal English
+
+## Grammar
+
+Include a structured progression through topics such as:
+
+- articles
+- pronouns
+- plurals
+- countable/uncountable nouns
+- present simple
+- present continuous
+- past simple
+- past continuous
+- present perfect
+- present perfect continuous
+- past perfect
+- future forms
+- modal verbs
+- conditionals
+- passive voice
+- reported speech
+- relative clauses
+- comparatives
+- superlatives
+- gerunds
+- infinitives
+- determiners
+- quantifiers
+- conjunctions
+- prepositions
+- phrasal verbs
+- advanced tense distinctions
+- inversion
+- cleft sentences
+- mixed conditionals
+- advanced modality
+- advanced linking structures
+- discourse markers
+- advanced register
+- nuanced C1/C2 grammar
+
+## Functional English
+
+Include skills such as:
+
+- introducing ideas
+- agreeing
+- disagreeing
+- expressing uncertainty
+- giving opinions
+- persuading
+- comparing
+- hypothesizing
+- describing experiences
+- summarizing
+- paraphrasing
+- arguing a position
+- making formal requests
+- expressing nuance
+
+---
+
+# 13. VOCABULARY SYSTEM
+
+Vocabulary must be a first-class system.
+
+Each vocabulary item may contain:
+
+- lemma
+- word
+- pronunciation
+- IPA
+- part of speech
+- meaning
+- Romanian translation where appropriate
+- English definition
+- CEFR level
+- frequency
+- example sentences
+- collocations
+- synonyms
+- antonyms
+- related words
+- word family
+- common mistakes
+- register
+- tags
+
+Track personal vocabulary states.
+
+Example mastery states:
+
+- new
+- learning
+- familiar
+- strong
+- mastered
+
+Do not base mastery purely on number of clicks.
+
+Use review performance and memory history.
+
+---
+
+# 14. SPACED REPETITION SYSTEM
+
+Implement a real review scheduler.
+
+Use a modern algorithm such as FSRS if practical.
+
+If a simpler algorithm is initially necessary, encapsulate it so it can be upgraded later.
+
+Each review item should track information such as:
+
+- due date
+- stability
+- difficulty
+- repetitions
+- lapses
+- last review
+- review history
+- user rating
+
+Possible ratings:
+
+- Again
+- Hard
+- Good
+- Easy
+
+Items eligible for review can include:
+
+- vocabulary
+- grammar rules
+- phrases
+- user mistakes
+
+Create a dedicated Review Queue.
+
+---
+
+# 15. MISTAKE ENGINE
+
+This is extremely important.
+
+Whenever I make a meaningful mistake, record it when appropriate.
+
+Example mistake information:
+
+- exercise
+- skill
+- expected answer
+- submitted answer
+- mistake type
+- grammar concept
+- vocabulary involved
+- date
+- recurrence count
+
+The system should detect repeated weaknesses.
+
+Create a Mistake Center where I can review:
+
+- recent mistakes
+- recurring mistakes
+- grammar weaknesses
+- forgotten vocabulary
+
+Mistakes should be able to enter spaced repetition.
+
+---
+
+# 16. DAILY LEARNING SYSTEM
+
+Create a personalized Daily Session.
+
+A daily session should intelligently combine:
+
+- due reviews
+- new vocabulary
+- grammar
+- reading/listening
+- active recall
+- previous mistakes
+
+Do not make every day identical.
+
+Allow user preferences such as:
+
+5 minutes
+10 minutes
+20 minutes
+30 minutes
+45 minutes
+60 minutes
+
+The application should calculate a realistic daily workload.
+
+---
+
+# 17. PLACEMENT TEST
+
+Create an initial English placement assessment.
+
+The assessment should estimate a starting CEFR range.
+
+Do NOT claim it is an official Cambridge test.
+
+Use progressively difficult questions.
+
+Cover:
+
+- vocabulary
+- grammar
+- reading
+- language use
+
+A later phase may add listening.
+
+Avoid making the test unnecessarily long.
+
+The test should adapt or branch when practical.
+
+At completion provide:
+
+- estimated level
+- skill breakdown
+- major strengths
+- major weaknesses
+- recommended starting unit
+
+---
+
+# 18. PRONUNCIATION
+
+Pronunciation should eventually include:
+
+- word pronunciation
+- sentence pronunciation
+- IPA
+- stress
+- difficult sounds
+- minimal pairs
+- connected speech
+- rhythm
+- intonation
+
+For the free initial version, investigate browser-native capabilities such as:
+
+- Web Speech API
+- SpeechRecognition where supported
+- speechSynthesis
+- MediaRecorder
+
+Build graceful fallbacks because browser support varies.
+
+Do NOT pretend that browser speech-to-text is a precise phoneme-level pronunciation evaluator.
+
+If exact pronunciation scoring requires a future external provider, isolate it behind an interface.
+
+For example:
+
+PronunciationProvider
+
+with possible future implementations using specialized speech services.
+
+---
+
+# 19. LISTENING
+
+Design listening exercises around:
+
+- words
+- short phrases
+- sentences
+- conversations
+- monologues
+- exam-style recordings
+
+For initial content, browser speech synthesis may be used where natural enough.
+
+Architect audio assets so professionally recorded or generated audio can replace TTS later.
+
+Exercise examples:
+
+- transcription
+- multiple choice
+- missing words
+- comprehension
+- detail identification
+- speaker intent
+
+---
+
+# 20. SPEAKING
+
+Speaking practice should eventually include:
+
+- repeat-after-model
+- read aloud
+- describe an image
+- answer a question
+- summarize something
+- discuss a topic
+- Cambridge-style speaking prompts
+
+For V1, store recordings and/or use supported browser speech recognition.
+
+Do not falsely claim semantic speaking evaluation unless an actual evaluator exists.
+
+Prepare the architecture for optional AI assessment later.
+
+---
+
+# 21. WRITING
+
+Writing practice should include:
+
+- sentences
+- short messages
+- stories
+- descriptions
+- reviews
+- essays
+- reports
+- formal emails
+- informal emails
+- proposals
+
+Cambridge-specific writing tasks should be added later.
+
+Without live AI, build:
+
+- prompts
+- model answers
+- checklists
+- rubrics
+- self-review workflow
+- vocabulary suggestions
+
+Architect optional AI feedback for the future.
+
+---
+
+# 22. CAMBRIDGE EXAM MODE
+
+This is one of the most important long-term components.
+
+Support the structure of:
+
+- B2 First
+- C1 Advanced
+- C2 Proficiency
+
+Before implementing exam content, VERIFY current exam structure and official terminology from reliable Cambridge English sources.
+
+Do not invent exam formats.
+
+Create an Exam Prep area with eventually:
+
+- Reading and Use of English
+- Writing
+- Listening
+- Speaking
+
+Create exam-style practice.
+
+Also support:
+
+- individual exam parts
+- timed practice
+- full mock exams
+- scoring history
+- performance trends
+- weak areas
+- time management statistics
+
+Clearly label unofficial practice material as practice material.
+
+Do not represent generated questions as official Cambridge questions.
+
+---
+
+# 23. GAMIFICATION
+
+Implement tasteful gamification.
+
+Potential systems:
+
+- XP
+- study streak
+- level
+- achievements
+- daily goal
+- weekly goal
+- mastery badges
+- course completion
+- skill milestones
+
+Avoid systems that encourage meaningless grinding.
+
+XP should correlate with meaningful learning activity.
+
+---
+
+# 24. DASHBOARD
+
+The Dashboard should eventually show:
+
+- today's learning goal
+- continue learning
+- due reviews
+- current CEFR estimate
+- target level
+- target exam
+- current streak
+- XP
+- vocabulary learned
+- study time
+- weekly activity
+- weak skills
+- recent achievements
+- recommended next activity
+
+It should remain visually clean.
+
+Do not show twenty widgets at once.
+
+Prioritize the information that matters today.
+
+---
+
+# 25. ANALYTICS
+
+Create useful personal learning analytics.
+
+Potential metrics:
+
+- total study time
+- study time per day/week/month
+- lesson completion
+- vocabulary acquisition
+- vocabulary retention
+- review accuracy
+- grammar accuracy
+- skill accuracy
+- streak
+- CEFR progression
+- exam practice results
+- mistake frequency
+- weak topics
+- strongest topics
+
+Use charts only when they communicate something useful.
+
+---
+
+# 26. MULTI-LANGUAGE ARCHITECTURE
+
+English is first.
+
+However, architecture must allow later courses for:
+
+- Japanese
+- Spanish
+- Italian
+
+Do NOT assume every language has identical learning requirements.
+
+Japanese will eventually need support for:
+
+- hiragana
+- katakana
+- kanji
+- readings
+- stroke/order information where useful
+- particles
+- grammar structures
+- vocabulary
+- listening
+- pronunciation
+
+Therefore avoid database structures that only work for English.
+
+Create language-aware content schemas.
+
+---
+
+# 27. ACCESSIBILITY
+
+Implement good accessibility practices.
+
+Include:
+
+- semantic HTML
+- keyboard navigation
+- visible focus states
+- sufficient contrast
+- proper form labels
+- accessible dialogs
+- ARIA only where appropriate
+
+Do not sacrifice accessibility for visual effects.
+
+---
+
+# 28. PERFORMANCE
+
+Follow good Next.js practices.
+
+Avoid unnecessary client-side components.
+
+Use server components where appropriate.
+
+Optimize:
+
+- bundle size
+- queries
+- images
+- loading states
+- caching
+- navigation
+
+Do not prematurely overengineer infrastructure.
+
+---
+
+# 29. SECURITY
+
+Follow good security practices.
+
+Include:
+
+- secure authentication
+- hashed credentials where applicable
+- validated input
+- server-side authorization
+- CSRF considerations where relevant
+- safe cookies
+- environment variables
+- SQL injection protection through ORM/query parameterization
+- rate limiting where relevant
+- safe file handling if recordings are stored
+
+Never expose secrets to the browser.
+
+---
+
+# 30. DATABASE DESIGN
+
+Before implementation, design the data model carefully.
+
+Possible conceptual entities include:
+
+User
+UserSettings
+Language
+Course
+CourseLevel
+Unit
+Lesson
+LessonActivity
+VocabularyEntry
+VocabularyProgress
+GrammarTopic
+ExerciseAttempt
+LessonProgress
+SkillProgress
+ReviewItem
+ReviewHistory
+Mistake
+Achievement
+UserAchievement
+StudySession
+Exam
+ExamSection
+ExamAttempt
+WritingAttempt
+SpeakingAttempt
+
+These are conceptual suggestions.
+
+You may merge or restructure them if a cleaner schema exists.
+
+Avoid creating a huge normalized schema without justification.
+
+Balance flexibility and maintainability.
+
+---
+
+# 31. DEVELOPMENT PROCESS
+
+Follow this process throughout the project.
+
+For every phase:
+
+1. Inspect the existing project.
+2. State the goal of the phase briefly.
+3. Identify required architectural changes.
+4. Implement them.
+5. Create or update database migrations.
+6. Add realistic seed/content data where needed.
+7. Test the implementation.
+8. Run lint.
+9. Run type checking.
+10. Run relevant automated tests.
+11. Fix errors.
+12. Inspect the UX.
+13. Update documentation.
+14. Summarize what was completed.
+
+Never leave the repository intentionally broken between phases.
+
+If a feature requires another feature that is not implemented yet, create a clean abstraction or placeholder rather than fake functionality.
+
+Do not hide errors.
+
+---
+
+# 32. CODE QUALITY RULES
+
+Use production-quality conventions.
+
+Requirements:
+
+- TypeScript strict mode
+- avoid `any`
+- small cohesive modules
+- descriptive naming
+- no giant components
+- no giant route files
+- reusable UI
+- reusable domain logic
+- separation of concerns
+- server-side logic separated appropriately
+- no hardcoded secrets
+- avoid duplicated business logic
+- comments only where useful
+- clear error states
+- clear loading states
+- empty states
+- mobile responsive behavior
+
+Do not create unnecessary abstractions only for the sake of architecture.
+
+---
+
+# 33. VERSION CONTROL
+
+If Git is available:
+
+Use clear, logical commits.
+
+Prefer conventional commit style such as:
+
+feat:
+fix:
+refactor:
+docs:
+test:
+chore:
+
+Make commits around coherent milestones rather than every tiny change.
+
+Never commit broken code intentionally.
+
+---
+
+# 34. ROADMAP
+
+Follow this roadmap.
+
+Do NOT jump directly to later phases before the foundations work.
+
+==================================================
+PHASE 0 — DISCOVERY AND ARCHITECTURE
+==================================================
+
+Before coding:
+
+- inspect repository/environment
+- determine whether a project already exists
+- define product architecture
+- select final technical stack
+- define folder architecture
+- design initial database schema
+- design content schema
+- define design system
+- establish testing strategy
+- create implementation roadmap
+
+Create an architecture/project document.
+
+Do NOT spend excessive time producing theoretical documentation.
+
+The objective is to make good decisions and start building.
+
+PHASE 0 acceptance criteria:
+
+- stack decided
+- architecture documented
+- data model planned
+- content model planned
+- development environment understood
+- roadmap confirmed
+
+==================================================
+PHASE 1 — PROJECT FOUNDATION
+==================================================
+
+Build the technical foundation.
+
+Implement:
+
+- Next.js project
+- TypeScript strict mode
+- Tailwind
+- reusable UI system
+- linting
+- formatting
+- testing setup
+- environment validation
+- database integration
+- ORM
+- migrations
+- base layout
+- responsive navigation
+- light/dark theme
+- basic error handling
+- loading patterns
+
+Create the initial premium visual identity.
+
+PHASE 1 acceptance criteria:
+
+- project runs locally
+- production build succeeds
+- lint succeeds
+- type check succeeds
+- database connects
+- basic automated test succeeds
+- responsive shell exists
+
+==================================================
+PHASE 2 — AUTHENTICATION AND PROFILE
+==================================================
+
+Implement:
+
+- registration/login or appropriate personal authentication flow
+- logout
+- secure sessions
+- protected application routes
+- learner profile
+- settings
+
+Profile fields should include:
+
+- native language
+- target language
+- target level
+- target Cambridge exam
+- daily study target
+
+PHASE 2 acceptance criteria:
+
+- user can authenticate
+- session persists
+- protected routes work
+- profile can be edited
+- data persists correctly
+
+==================================================
+PHASE 3 — CONTENT AND COURSE ENGINE
+==================================================
+
+Build the fundamental curriculum system.
+
+Implement:
+
+- languages
+- courses
+- CEFR levels
+- units
+- lessons
+- lesson activities
+- lesson completion
+- lesson progress
+- prerequisites/unlocking
+
+Create a SMALL but high-quality initial English curriculum.
+
+Do not generate the entire A1-C2 library yet.
+
+Create enough content to prove the architecture.
+
+PHASE 3 acceptance criteria:
+
+- learner can open a course
+- view units
+- enter a lesson
+- complete multiple activity types
+- receive answers/explanations
+- progress persists
+- lesson unlock logic works
+
+==================================================
+PHASE 4 — EXERCISE ENGINE
+==================================================
+
+Create reusable exercise components and schemas.
+
+Implement an initial set including:
+
+- multiple choice
+- fill the gap
+- typed answer
+- sentence reorder
+- matching
+- translation
+- error correction
+
+Implement:
+
+- answer validation
+- normalization
+- feedback
+- explanations
+- attempts
+- scoring
+- keyboard-friendly interaction
+
+PHASE 4 acceptance criteria:
+
+- exercise rendering is schema-driven
+- results persist
+- answers are validated consistently
+- feedback UX is polished
+- components work on mobile
+
+==================================================
+PHASE 5 — VOCABULARY SYSTEM
+==================================================
+
+Implement:
+
+- vocabulary database
+- vocabulary details
+- example sentences
+- tags
+- CEFR level
+- word families
+- collocations
+- user mastery state
+- vocabulary browser
+- personal vocabulary list
+
+Create an initial curated English dataset.
+
+PHASE 5 acceptance criteria:
+
+- vocabulary can be introduced through lessons
+- vocabulary progress persists
+- learner can browse learned vocabulary
+- mastery can evolve through practice
+
+==================================================
+PHASE 6 — SPACED REPETITION
+==================================================
+
+Build Review.
+
+Prefer FSRS if implementation quality is good.
+
+Implement:
+
+- scheduling
+- due cards
+- review sessions
+- Again/Hard/Good/Easy
+- review history
+- vocabulary reviews
+- review statistics
+
+PHASE 6 acceptance criteria:
+
+- due dates are calculated
+- reviews persist
+- scheduling changes based on answers
+- dashboard can show due review count
+
+==================================================
+PHASE 7 — MISTAKE ENGINE
+==================================================
+
+Implement persistent mistake tracking.
+
+Add:
+
+- recent mistakes
+- repeated mistakes
+- weakness classification
+- review from mistakes
+- recurrence count
+
+Integrate mistakes into Review where appropriate.
+
+PHASE 7 acceptance criteria:
+
+- meaningful errors are recorded
+- repeated errors are detectable
+- mistakes can return as practice
+- Mistake Center works
+
+==================================================
+PHASE 8 — DAILY LEARNING
+==================================================
+
+Build the personalized Daily Session.
+
+Combine:
+
+- due review
+- current lesson
+- vocabulary
+- grammar
+- mistakes
+
+Support configurable daily duration.
+
+Build Today's Goal.
+
+PHASE 8 acceptance criteria:
+
+- system creates an appropriate daily workload
+- progress survives refresh/navigation
+- completed daily work is tracked
+- workload respects selected duration
+
+==================================================
+PHASE 9 — PLACEMENT TEST
+==================================================
+
+Implement the English placement assessment.
+
+Use increasingly difficult questions.
+
+Estimate:
+
+- CEFR range
+- grammar
+- vocabulary
+- reading
+
+Use the result to recommend a course position.
+
+PHASE 9 acceptance criteria:
+
+- assessment can be completed
+- result is stored
+- result affects recommended learning path
+- result is clearly described as an estimate
+
+==================================================
+PHASE 10 — DASHBOARD AND ANALYTICS
+==================================================
+
+Upgrade Dashboard.
+
+Add:
+
+- daily progress
+- study streak
+- XP
+- course progress
+- due reviews
+- vocabulary count
+- skill scores
+- study activity chart
+- weak areas
+
+Add useful analytics pages.
+
+PHASE 10 acceptance criteria:
+
+- dashboard uses real persisted data
+- charts are accurate
+- empty/new-user state looks good
+- layout remains clean
+
+==================================================
+PHASE 11 — GAMIFICATION
+==================================================
+
+Implement tasteful:
+
+- XP
+- levels
+- streaks
+- achievements
+- milestones
+- weekly targets
+
+Prevent trivial XP farming where possible.
+
+PHASE 11 acceptance criteria:
+
+- XP originates from meaningful activity
+- streak calculation is correct
+- achievement criteria are deterministic
+- progress is persisted
+
+==================================================
+PHASE 12 — READING
+==================================================
+
+Create reading practice.
+
+Content should gradually scale from simple text to advanced material.
+
+Exercise types:
+
+- comprehension
+- vocabulary in context
+- inference
+- reference
+- main idea
+- detail
+- tone
+- paraphrase
+
+Track reading performance.
+
+==================================================
+PHASE 13 — LISTENING
+==================================================
+
+Implement audio architecture and listening exercises.
+
+Start with free browser-supported or stored audio options.
+
+Create:
+
+- transcription
+- comprehension
+- gap fill
+- replay controls
+- playback speed where appropriate
+
+Track listening performance.
+
+==================================================
+PHASE 14 — PRONUNCIATION AND SPEAKING
+==================================================
+
+Implement browser-based speaking functionality where supported.
+
+Add:
+
+- word practice
+- sentence practice
+- recording
+- playback
+- speech recognition
+- model pronunciation playback
+
+Be transparent about limitations.
+
+Create provider interfaces for future advanced pronunciation analysis.
+
+==================================================
+PHASE 15 — WRITING
+==================================================
+
+Implement writing practice.
+
+Create:
+
+- writing prompts
+- draft editor
+- word count
+- rubrics
+- checklists
+- model answers
+- attempt history
+
+Prepare optional AI feedback interfaces but do not require AI API usage.
+
+==================================================
+PHASE 16 — CAMBRIDGE PREPARATION
+==================================================
+
+Before coding this phase:
+
+VERIFY the current official structure of Cambridge B2 First, C1 Advanced, and C2 Proficiency using Cambridge English sources.
+
+Then build an exam-preparation module.
+
+Prioritize the currently selected target exam.
+
+Create practice for official skill categories without copying copyrighted exam papers.
+
+Generate original exam-style materials.
+
+Add:
+
+- section practice
+- timers
+- answer review
+- score history
+- weakness breakdown
+
+==================================================
+PHASE 17 — MOCK EXAMS
+==================================================
+
+Build timed mock examination workflows.
+
+Include:
+
+- autosave
+- navigation
+- exam timer
+- completion
+- results
+- section statistics
+- previous attempts
+
+Ensure generated questions are clearly labeled as unofficial practice.
+
+==================================================
+PHASE 18 — CURRICULUM EXPANSION
+==================================================
+
+Once the engines are stable, substantially expand the English course.
+
+Create structured learning content from:
+
+A1
+A2
+B1
+B2
+C1
+C2
+
+Do this systematically.
+
+Avoid hundreds of repetitive low-quality questions.
+
+Prioritize quality.
+
+Build reusable generation/validation scripts if useful.
+
+==================================================
+PHASE 19 — ADVANCED ADAPTIVE LEARNING
+==================================================
+
+Create personalization logic using accumulated user data.
+
+Recommendations can consider:
+
+- due reviews
+- weak topics
+- repeated mistakes
+- course position
+- skill performance
+- recent performance
+- forgetting risk
+
+Build a transparent deterministic recommendation engine first.
+
+AI is NOT required.
+
+==================================================
+PHASE 20 — OPTIONAL AI ARCHITECTURE
+==================================================
+
+Only after the core product is useful without AI:
+
+Create an AI provider abstraction.
+
+Potential future capabilities:
+
+- tutor chat
+- contextual explanations
+- writing feedback
+- dynamic exercises
+- speaking evaluation
+- conversation simulation
+
+Support disabled/no-provider mode.
+
+Never require an API key for ordinary learning.
+
+==================================================
+PHASE 21 — MULTI-LANGUAGE FOUNDATION
+==================================================
+
+Refactor/validate the course architecture for multiple languages.
+
+Prepare support for:
+
+- Spanish
+- Italian
+- Japanese
+
+Do NOT build all curricula immediately.
+
+Prove that another language can be added cleanly without breaking English.
+
+==================================================
+PHASE 22 — JAPANESE-SPECIFIC ENGINE
+==================================================
+
+When Japanese development begins, design language-specific functionality for:
+
+- hiragana
+- katakana
+- kanji
+- readings
+- vocabulary
+- particles
+- grammar
+- listening
+- pronunciation
+
+Do not force Japanese into an English-only schema.
+
+==================================================
+PHASE 23 — POLISH AND PRODUCTION READINESS
+==================================================
+
+Perform a complete product audit.
+
+Review:
+
+- UX
+- accessibility
+- mobile behavior
+- performance
+- authentication
+- security
+- database queries
+- migrations
+- error states
+- loading states
+- testing
+- content quality
+- SEO for public pages if applicable
+
+Remove dead code.
+
+Fix warnings.
+
+Run production build.
+
+==================================================
+PHASE 24 — DEPLOYMENT
+==================================================
+
+Prepare production deployment.
+
+Include:
+
+- Vercel configuration
+- production database
+- environment variables
+- migrations
+- seed process
+- domain configuration instructions
+- README
+- backup considerations
+
+Do not expose secrets.
+
+---
+
+# 35. TESTING REQUIREMENTS
+
+Testing is not an optional final step.
+
+Test important domain logic especially:
+
+- progress calculation
+- review scheduling
+- streaks
+- XP
+- lesson completion
+- prerequisites
+- placement scoring
+- answer validation
+- exam scoring
+
+Add E2E coverage for essential flows such as:
+
+login
+→ dashboard
+→ lesson
+→ complete exercise
+→ finish lesson
+→ progress updated
+
+and:
+
+review
+→ answer cards
+→ review schedule updated
+
+---
+
+# 36. CONTENT QUALITY CONTROL
+
+When generating learning content:
+
+Check for:
+
+- grammatical correctness
+- natural phrasing
+- unambiguous answers
+- correct CEFR difficulty
+- correct explanations
+- realistic examples
+
+Avoid machine-generated nonsense.
+
+Create content validators where practical.
+
+Exercise answers should not rely on fragile exact-string comparison when multiple valid forms are possible.
+
+---
+
+# 37. ROMANIAN SUPPORT
+
+Because my native language is Romanian, translations and explanations may use Romanian when pedagogically useful.
+
+However, gradually reduce dependence on translation as English level increases.
+
+At advanced levels, favor English definitions and explanations.
+
+---
+
+# 38. UX DETAILS
+
+Implement polished details such as:
+
+- shortcuts for exercise answers
+- Enter to submit where safe
+- smooth transitions
+- progress animation
+- clear correct/incorrect feedback
+- ability to continue quickly
+- visible explanation after mistakes
+- no accidental loss of lesson progress
+- usable mobile keyboards/input
+- audio replay
+- accessible buttons
+
+Do not make the user repeatedly click unnecessary confirmation dialogs.
+
+---
+
+# 39. OFFLINE/PWA POSSIBILITY
+
+Do not prioritize this initially.
+
+However, avoid architecture that unnecessarily prevents future:
+
+- PWA installation
+- partial offline lesson access
+- offline vocabulary review
+
+This can be evaluated after the core app is stable.
+
+---
+
+# 40. FINAL PRODUCT EXPECTATION
+
+The finished long-term product should feel like an actual commercial-quality application built specifically for serious independent language study.
+
+It should not feel like:
+
+- a school CRUD project
+- a collection of random quizzes
+- a ChatGPT wrapper
+- a static curriculum viewer
+- a generic dashboard template
+
+Its strongest qualities should eventually be:
+
+1. structured curriculum
+2. intelligent review
+3. excellent mistake tracking
+4. real progression
+5. Cambridge preparation
+6. strong vocabulary system
+7. polished UX
+8. pronunciation/speaking support
+9. detailed analytics
+10. extensibility to other languages
+
+---
+
+# 41. HOW YOU SHOULD WORK
+
+You are allowed to make sensible engineering decisions without asking me about every minor implementation detail.
+
+If multiple reasonable implementations exist:
+
+1. choose the one that best fits this project,
+2. briefly document why,
+3. continue.
+
+Do not repeatedly stop for confirmation unless:
+
+- credentials are genuinely required
+- destructive action is needed
+- an important product decision cannot reasonably be inferred
+- an external service requires my action
+
+When encountering errors:
+
+- investigate them
+- fix them
+- retest
+
+Do not leave TODO placeholders for core functionality when you can implement it.
+
+Do not say a feature works unless you have actually validated it.
+
+---
+
+# 42. FIRST EXECUTION
+
+Begin with PHASE 0.
+
+Inspect the available workspace and repository.
+
+If no repository exists, create the project structure.
+
+Then:
+
+1. produce the concise architecture plan,
+2. define the chosen stack,
+3. define the first database/content model,
+4. create the roadmap/checklist inside the project,
+5. begin PHASE 1,
+6. implement and test the foundation.
+
+Do not attempt to implement all 24 phases in the first pass.
+
+The project's internal documentation should always show:
+
+- completed phases
+- current phase
+- remaining phases
+- important architectural decisions
+
+At the end of every working session, provide a concise report containing:
+
+COMPLETED
+- what was actually implemented
+
+VALIDATED
+- tests/build/typecheck/lint results
+
+DECISIONS
+- important architectural choices made
+
+CURRENT STATE
+- what can be used right now
+
+NEXT
+- the exact next phase/tasks
+
+BLOCKERS
+- only genuine blockers requiring my action
+
+The long-term goal is to continue from this same repository across multiple Work sessions until the complete platform exists.
+
+Start now with PHASE 0 and PHASE 1.

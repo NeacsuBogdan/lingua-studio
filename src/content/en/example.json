@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "en-b2-conditionals-01",
+  "language": "en",
+  "level": "B2",
+  "title": "Imagining a different present",
+  "prerequisiteIds": [],
+  "activities": [
+    {
+      "id": "conditional-01",
+      "type": "multiple-choice",
+      "prompt": "If I had more time, I ___ another language.",
+      "options": ["will learn", "would learn", "learned"],
+      "answerIndex": 1,
+      "explanation": "Use if + past simple with would + base verb for an imagined present or future situation. Example: If she lived closer, we would meet more often.",
+      "tags": ["grammar", "second-conditional"]
+    },
+    {
+      "id": "conditional-02",
+      "type": "typed-answer",
+      "prompt": "Complete with the correct form of know: If I ___ the answer, I would tell you.",
+      "acceptedAnswers": ["knew"],
+      "explanation": "Knew is the past simple form of know. Here it expresses an unreal present situation, not past time.",
+      "tags": ["grammar", "second-conditional"]
+    }
+  ]
+}
