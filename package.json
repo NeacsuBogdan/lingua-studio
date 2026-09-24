@@ -1,7 +1,7 @@
 {
   "name": "lingua-studio",
   "version": "0.1.0",
-  "description": "Personal language learning platform — phase 2 in progress",
+  "description": "Personal language learning platform",
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "build": "next build",
@@ -16,7 +16,8 @@
     "db:migrate": "tsx scripts/db.ts migrate",
     "db:seed": "tsx scripts/db.ts seed",
     "db:check": "tsx scripts/db.ts check",
-    "db:inspect": "tsx scripts/db.ts inspect"
+    "db:inspect": "tsx scripts/db.ts inspect",
+    "db:verify": "tsx scripts/db.ts verify"
   },
   "keywords": [],
   "author": "",

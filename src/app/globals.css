@@ -855,3 +855,322 @@ footer {
       color 0.15s ease;
   }
 }
+
+.course-overview {
+  display: flex;
+  justify-content: space-between;
+  gap: 32px;
+  padding: clamp(22px, 3vw, 36px);
+  margin-bottom: 26px;
+  border-radius: 14px;
+  background: var(--hero);
+  color: #fff;
+}
+.course-overview .small-label {
+  color: #c8d6ff;
+}
+.course-overview h2 {
+  font-family: Georgia, serif;
+  font-size: clamp(1.5rem, 2.4vw, 2.1rem);
+  font-weight: 400;
+  margin: 8px 0;
+}
+.course-overview p {
+  color: #d9e2ff;
+  max-width: 620px;
+  font-size: 0.9rem;
+}
+.course-overview-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 190px;
+}
+.course-overview-actions strong {
+  font-size: 2rem;
+  line-height: 1.2;
+}
+.course-overview-actions > span {
+  color: #d9e2ff;
+  font-size: 0.8rem;
+}
+.course-overview .primary-link {
+  margin-top: 22px;
+  background: #fff;
+  color: #172e6a;
+}
+.course-levels {
+  display: grid;
+  gap: 22px;
+}
+.course-level {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: clamp(18px, 2.5vw, 30px);
+  box-shadow: var(--shadow);
+}
+.course-level-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+.course-level-heading .level-badge {
+  display: grid;
+  place-items: center;
+  background: var(--soft);
+  border-radius: 10px;
+  font-weight: 700;
+  min-width: 54px;
+  height: 54px;
+}
+.course-level-heading > div {
+  flex: 1;
+}
+.course-level-heading h2 {
+  font-family: Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+}
+.course-level-heading p,
+.course-unit-heading p,
+.course-empty,
+.lesson-info p {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+.course-level-heading > .small-label {
+  white-space: nowrap;
+  margin-top: 4px;
+}
+.course-empty {
+  padding: 18px 0 0 74px;
+}
+.course-unit {
+  margin: 26px 0 0 74px;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+.course-unit-heading h3 {
+  font-size: 1.05rem;
+  margin: 3px 0;
+}
+.lesson-list {
+  padding: 0;
+  margin: 15px 0 0;
+  list-style: none;
+  display: grid;
+  gap: 9px;
+}
+.lesson-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--bg);
+}
+.lesson-index {
+  flex: 0 0 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--accent);
+  background: var(--soft);
+}
+.lesson-completed .lesson-index {
+  background: #e6f6ef;
+  color: #167449;
+}
+[data-theme='dark'] .lesson-completed .lesson-index {
+  background: #153b30;
+  color: #a5e7ca;
+}
+.lesson-locked {
+  border-style: dashed;
+}
+.lesson-info {
+  min-width: 0;
+  flex: 1;
+}
+.lesson-info h4 {
+  margin: 2px 0;
+  font-size: 1rem;
+}
+.lesson-state {
+  color: var(--muted);
+  font-size: 0.78rem;
+  max-width: 130px;
+  line-height: 1.3;
+  text-align: right;
+}
+.lesson-open {
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.lesson-open:hover {
+  text-decoration: underline;
+}
+.lesson-page {
+  max-width: 820px;
+}
+.lesson-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.88rem;
+  margin-bottom: 28px;
+}
+.lesson-page .page-heading {
+  margin-bottom: 30px;
+}
+.lesson-panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: clamp(24px, 4vw, 42px);
+  box-shadow: var(--shadow);
+}
+.lesson-panel h2 {
+  font-family: Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  margin: 10px 0 14px;
+}
+.lesson-panel > p {
+  color: var(--muted);
+}
+.lesson-panel form {
+  margin-top: 28px;
+}
+.lesson-panel button.primary-link {
+  border: 0;
+}
+.lesson-meta {
+  margin-top: 20px;
+  font-size: 0.85rem;
+}
+.lesson-step {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: capitalize;
+}
+.lesson-progress-track {
+  height: 5px;
+  background: var(--line);
+  border-radius: 5px;
+  margin: 16px 0 35px;
+  overflow: hidden;
+}
+.lesson-progress-track span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.lesson-instructions {
+  font-weight: 600;
+  color: var(--text) !important;
+}
+.lesson-example,
+.lesson-explanation {
+  border-left: 3px solid var(--accent);
+  padding: 13px 18px;
+  margin-top: 25px;
+  background: var(--soft);
+  border-radius: 0 8px 8px 0;
+}
+.lesson-example p,
+.lesson-explanation p {
+  margin-top: 5px;
+}
+.lesson-explanation {
+  border-color: var(--line);
+  background: var(--bg);
+}
+.lesson-complete > svg {
+  color: #168354;
+}
+.lesson-actions {
+  margin-top: 28px;
+}
+.lesson-locked > svg {
+  color: var(--muted);
+}
+.lesson-locked .text-link {
+  margin-top: 25px;
+}
+.lesson-review {
+  margin-top: 35px;
+  border-top: 1px solid var(--line);
+  padding-top: 25px;
+}
+.lesson-review h3 {
+  margin-bottom: 15px;
+}
+.lesson-review article {
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+}
+.lesson-review h4 {
+  margin: 5px 0;
+  font-size: 1rem;
+}
+.lesson-review article p {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.lesson-review .lesson-review-example {
+  color: var(--text);
+  margin-top: 10px;
+  font-style: italic;
+}
+@media (max-width: 600px) {
+  .course-overview {
+    flex-direction: column;
+    gap: 18px;
+  }
+  .course-overview-actions {
+    align-items: flex-start;
+  }
+  .course-overview .primary-link {
+    margin-top: 14px;
+  }
+  .course-level-heading {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .course-level-heading > .small-label {
+    width: 100%;
+    margin-left: 66px;
+  }
+  .course-unit {
+    margin-left: 0;
+  }
+  .course-empty {
+    padding-left: 0;
+  }
+  .lesson-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .lesson-info {
+    flex-basis: calc(100% - 48px);
+  }
+  .lesson-open,
+  .lesson-state {
+    margin-left: 48px;
+    text-align: left;
+  }
+}

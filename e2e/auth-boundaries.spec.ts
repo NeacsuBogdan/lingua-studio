@@ -2,7 +2,12 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 test('protected pages redirect visitors to sign-in', async ({ page }) => {
-  for (const route of ['/', '/course', '/settings']) {
+  for (const route of [
+    '/',
+    '/course',
+    '/course/lesson/en-b1-present-perfect',
+    '/settings',
+  ]) {
     await page.goto(route);
     await expect(page).toHaveURL('/sign-in');
     await expect(

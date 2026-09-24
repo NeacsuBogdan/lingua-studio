@@ -1,13 +1,13 @@
 # Implementation roadmap
 
-Current state: **Phase 2 complete** on `feat/phase-2-auth-profile`. Phase 3 is next and has not started.
+Current state: **Phase 3 complete** on `feat/phase-3-content-course-engine`. Phase 4 is next and has not started.
 
 | Phase | Scope                           | Status    |
 | ----- | ------------------------------- | --------- |
 | 0     | DISCOVERY AND ARCHITECTURE      | Completed |
 | 1     | PROJECT FOUNDATION              | Completed |
 | 2     | AUTHENTICATION AND PROFILE      | Completed |
-| 3     | CONTENT AND COURSE ENGINE       | Planned   |
+| 3     | CONTENT AND COURSE ENGINE       | Completed |
 | 4     | EXERCISE ENGINE                 | Planned   |
 | 5     | VOCABULARY SYSTEM               | Planned   |
 | 6     | SPACED REPETITION               | Planned   |
@@ -59,4 +59,17 @@ Current state: **Phase 2 complete** on `feat/phase-2-auth-profile`. Phase 3 is n
 - [x] Live owner-ID mismatch denied the existing session without deleting it; restoring the ID restored access
 - [x] Post-logout protected routes redirected to sign-in and Neon had zero active owner sessions
 
-Phase 2 acceptance is complete. Phase 3 remains planned; no Phase 3 implementation is included here.
+## Phase 3 acceptance
+
+- [x] Language/course/CEFR/unit/lesson/activity/prerequisite/progress model persists in PostgreSQL
+- [x] English A1–C2 level metadata and a small B1/B2 course slice are validated and seeded
+- [x] Content definition and owner-specific progress remain separate; seed is repeatable
+- [x] Course map and lesson route render actual catalog and progress, including clear empty/locked states
+- [x] Server-side owner authorization, prerequisite checks and expected-position updates protect progress mutations
+- [x] Lesson position/completion persists across refresh; completing the first unlocks the next
+- [x] PGlite migration/seed/domain tests and authenticated production-browser flow pass
+- [x] Neon development migration/seed verified without losing the existing profile
+- [x] Lint, typecheck, formatting, tests, E2E, build, migration check and dependency audit pass
+- [x] Desktop/mobile/320 px, light/dark, keyboard, accessibility, console and overflow checks pass
+
+Phase 3 acceptance is complete. The study/reflection blocks record traversal, not graded performance or proficiency. Phase 4 has not started.

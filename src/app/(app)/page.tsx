@@ -11,10 +11,17 @@ import { Card } from '@/components/ui/card';
 import { requireOwner } from '@/server/auth/session';
 import { getOrCreateProfile } from '@/server/profile/repository';
 import { languageLabels } from '@/lib/language-labels';
+import { getDb } from '@/server/db/client';
+import { getCourseMap } from '@/server/course/repository';
 export default async function Home() {
   const owner = await requireOwner();
   const profile = await getOrCreateProfile(owner.id);
   const language = languageLabels[profile.learningLanguage] ?? 'your language';
+  const course = await getCourseMap(
+    getDb(),
+    owner.id,
+    profile.learningLanguage,
+  );
   return (
     <>
       <div className="page-heading">
@@ -60,20 +67,34 @@ export default async function Home() {
         </section>
         <Card className="daily-card">
           <div className="section-top">
-            <h2>A fresh start</h2>
+            <h2>Your study path</h2>
             <Clock3 size={19} />
           </div>
           <div className="goal-ring">
             <span>
-              <strong>0</strong>
-              <small>minutes studied</small>
+              <strong>{course?.completedCount ?? 0}</strong>
+              <small>lessons completed</small>
             </span>
           </div>
-          <h3>Your story starts here.</h3>
+          <h3>
+            {course?.recommended
+              ? 'Your next lesson is ready.'
+              : course
+                ? 'Your path is complete for now.'
+                : 'Your story starts here.'}
+          </h3>
           <p>
-            Study activity will appear here after your first completed session.
+            {course?.recommended
+              ? course.recommended.title
+              : course
+                ? 'More lessons will be published later.'
+                : 'Choose English in Preferences to open the first course.'}
           </p>
-          <div className="quiet-tag">No sessions yet</div>
+          <div className="quiet-tag">
+            {course
+              ? `${course.completedCount} of ${course.lessonCount} published lessons`
+              : 'No published course'}
+          </div>
         </Card>
       </div>
       <div className="section-heading">
@@ -119,12 +140,12 @@ export default async function Home() {
           <p>
             Your profile is saved.{' '}
             {profile.learningLanguage === 'en'
-              ? 'Explore the English course outline while lessons and learning progress are being built.'
+              ? 'Explore the English course and continue your saved lessons.'
               : `${language} course content is planned. Your saved goals will be ready when that path is built.`}
           </p>
         </div>
         <Link href="/course" className="text-link">
-          View the outline <ArrowUpRight size={17} />
+          View the course <ArrowUpRight size={17} />
         </Link>
       </Card>
     </>

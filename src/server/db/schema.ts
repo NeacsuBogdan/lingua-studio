@@ -8,6 +8,8 @@ import {
   pgEnum,
   check,
   uniqueIndex,
+  jsonb,
+  primaryKey,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 export const cefr = pgEnum('cefr', ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
@@ -16,10 +18,22 @@ export const exam = pgEnum('cambridge_exam', [
   'c1-advanced',
   'c2-proficiency',
 ]);
-export const languages = pgTable('languages', {
-  code: text('code').primaryKey(),
-  name: text('name').notNull(),
-});
+export const languages = pgTable(
+  'languages',
+  {
+    code: text('code').primaryKey(),
+    name: text('name').notNull(),
+    nativeName: text('native_name').notNull().default(''),
+    writingDirection: text('writing_direction').notNull().default('ltr'),
+    isActive: boolean('is_active').notNull().default(false),
+  },
+  (t) => [
+    check(
+      'language_writing_direction',
+      sql`${t.writingDirection} in ('ltr','rtl')`,
+    ),
+  ],
+);
 export const users = pgTable(
   'users',
   {
@@ -145,7 +159,145 @@ export const courses = pgTable(
       .notNull()
       .references(() => languages.code),
     title: text('title').notNull(),
+    description: text('description').notNull().default(''),
     contentVersion: integer('content_version').notNull().default(1),
   },
   (t) => [check('content_version_positive', sql`${t.contentVersion} > 0`)],
+);
+
+export const courseLevels = pgTable(
+  'course_levels',
+  {
+    id: text('id').primaryKey(),
+    courseId: text('course_id')
+      .notNull()
+      .references(() => courses.id),
+    level: cefr('level').notNull(),
+    title: text('title').notNull(),
+    description: text('description').notNull(),
+    sortOrder: integer('sort_order').notNull(),
+  },
+  (t) => [
+    uniqueIndex('course_levels_course_level_unique').on(t.courseId, t.level),
+    uniqueIndex('course_levels_course_order_unique').on(
+      t.courseId,
+      t.sortOrder,
+    ),
+    check('course_levels_order_positive', sql`${t.sortOrder} > 0`),
+  ],
+);
+
+export const units = pgTable(
+  'units',
+  {
+    id: text('id').primaryKey(),
+    courseLevelId: text('course_level_id')
+      .notNull()
+      .references(() => courseLevels.id),
+    title: text('title').notNull(),
+    description: text('description').notNull(),
+    sortOrder: integer('sort_order').notNull(),
+  },
+  (t) => [
+    uniqueIndex('units_level_order_unique').on(t.courseLevelId, t.sortOrder),
+    check('units_order_positive', sql`${t.sortOrder} > 0`),
+  ],
+);
+
+export const lessons = pgTable(
+  'lessons',
+  {
+    id: text('id').primaryKey(),
+    unitId: text('unit_id')
+      .notNull()
+      .references(() => units.id),
+    title: text('title').notNull(),
+    summary: text('summary').notNull(),
+    skill: text('skill').notNull(),
+    sortOrder: integer('sort_order').notNull(),
+    estimatedMinutes: integer('estimated_minutes').notNull(),
+    contentVersion: integer('content_version').notNull().default(1),
+  },
+  (t) => [
+    uniqueIndex('lessons_unit_order_unique').on(t.unitId, t.sortOrder),
+    check('lessons_order_positive', sql`${t.sortOrder} > 0`),
+    check('lessons_minutes_positive', sql`${t.estimatedMinutes} > 0`),
+    check('lessons_version_positive', sql`${t.contentVersion} > 0`),
+  ],
+);
+
+export const lessonActivities = pgTable(
+  'lesson_activities',
+  {
+    id: text('id').primaryKey(),
+    lessonId: text('lesson_id')
+      .notNull()
+      .references(() => lessons.id),
+    sortOrder: integer('sort_order').notNull(),
+    type: text('type').notNull(),
+    instructions: text('instructions').notNull(),
+    prompt: text('prompt').notNull(),
+    explanation: text('explanation').notNull(),
+    skill: text('skill').notNull(),
+    level: cefr('level').notNull(),
+    tags: jsonb('tags').$type<string[]>().notNull(),
+    payload: jsonb('payload').$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [
+    uniqueIndex('lesson_activities_lesson_order_unique').on(
+      t.lessonId,
+      t.sortOrder,
+    ),
+    check('lesson_activities_order_positive', sql`${t.sortOrder} > 0`),
+  ],
+);
+
+export const lessonPrerequisites = pgTable(
+  'lesson_prerequisites',
+  {
+    lessonId: text('lesson_id')
+      .notNull()
+      .references(() => lessons.id),
+    prerequisiteId: text('prerequisite_id')
+      .notNull()
+      .references(() => lessons.id),
+  },
+  (t) => [
+    primaryKey({ columns: [t.lessonId, t.prerequisiteId] }),
+    check(
+      'lesson_prerequisite_not_self',
+      sql`${t.lessonId} <> ${t.prerequisiteId}`,
+    ),
+  ],
+);
+
+export const lessonProgress = pgTable(
+  'lesson_progress',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    lessonId: text('lesson_id')
+      .notNull()
+      .references(() => lessons.id),
+    contentVersion: integer('content_version').notNull(),
+    status: text('status').notNull().default('in_progress'),
+    position: integer('position').notNull().default(0),
+    startedAt: timestamp('started_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.lessonId] }),
+    check(
+      'lesson_progress_status_allowed',
+      sql`${t.status} in ('in_progress','completed')`,
+    ),
+    check('lesson_progress_position_nonnegative', sql`${t.position} >= 0`),
+    check(
+      'lesson_progress_completion_consistent',
+      sql`(${t.status} = 'completed' and ${t.completedAt} is not null) or (${t.status} = 'in_progress' and ${t.completedAt} is null)`,
+    ),
+  ],
 );
