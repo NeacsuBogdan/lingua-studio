@@ -40,8 +40,8 @@ jobs:
       BETTER_AUTH_SECRET: ci-only-secret-that-is-longer-than-thirty-two-characters
       GITHUB_CLIENT_ID: ci-github-client
       GITHUB_CLIENT_SECRET: ci-github-secret
-      GITHUB_OWNER_ID: "987654321012345678"
-      E2E_OWNER_COURSE: "1"
+      GITHUB_OWNER_ID: '987654321012345678'
+      E2E_OWNER_COURSE: '1'
 
     steps:
       - name: Checkout
