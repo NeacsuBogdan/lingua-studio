@@ -1,6 +1,6 @@
 # Lingua Studio
 
-Personal language-learning application. Phases 0–2 are complete: the owner's GitHub account signs in through OAuth, sessions persist in PostgreSQL, and learner preferences are saved in Neon. Lessons and learning progress are future phases.
+Personal language-learning application. Phases 0–3 are complete: the owner's GitHub account signs in through OAuth, sessions persist in PostgreSQL, learner preferences are saved in Neon, and the English course delivers persisted lessons and progress.
 
 ## Local setup
 
@@ -12,6 +12,7 @@ npm run db:check
 npm run db:inspect
 npm run db:migrate
 npm run db:seed
+npm run db:verify
 npm run dev
 ```
 
@@ -28,6 +29,8 @@ Create a GitHub OAuth App under **GitHub Settings → Developer settings → OAu
 
 Keep secrets in `.env.local`; never commit or send them in chat. Restart `npm run dev` after editing environment values. Open `http://127.0.0.1:3000/sign-in` and sign in with that exact GitHub account. If GitHub requires you to verify your email, complete that in GitHub first. Other accounts are rejected server-side. Auth sessions live in PostgreSQL, and sign-out ends the session. When configuration is incomplete, sign-in shows an honest setup state; the application does not bypass authentication.
 
+If local sign-in appears unresponsive, check whether the button changes to `Connecting…` and whether the browser sends `POST /api/auth/sign-in/social`. A failed POST can indicate an unavailable development database; run `npm run db:check` and inspect the server error without sharing credentials or OAuth query parameters. With direct `http://127.0.0.1:3000` development, Next's HMR should connect over `ws://`. If the browser instead shows a repeated `wss://` HMR failure, stop and restart the dev server, open a fresh tab at the direct local URL, and check for a proxy or stale browser runtime. HMR is development-only; the production build has no HMR connection.
+
 Use an HTTPS URL and a matching GitHub OAuth callback for any deployed origin. Keep secrets and the owner ID in the deployment environment, not the source tree. Apply migrations before serving the application. Deployment itself is a later phase.
 
 ## Verification
@@ -42,8 +45,10 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Playwright starts an isolated production server on `127.0.0.1:3100` and refuses to reuse an existing server. The browser suite checks the unauthenticated boundary, public sign-in accessibility, theme and mobile reflow. The unit/integration suite uses disposable PGlite databases; it does not touch Neon. A live owner browser run on the production build verified the GitHub callback, persistence across refresh, navigation and server restarts, profile updates in Neon, owner-ID enforcement and logout. See [the handoff](docs/HANDOFF.md) for the exact observations. The GitHub OAuth interaction itself remains a manual browser check because it requires the owner's authorization.
+Playwright starts an isolated production server on `127.0.0.1:3100` and refuses to reuse an existing server. The default browser suite checks unauthenticated boundaries, sign-in accessibility, theme and mobile reflow. It also checks that the sign-in click invokes Better Auth and reaches the GitHub authorization navigation, intercepting that navigation before account authorization. The server uses a process-only `BETTER_AUTH_URL` matching the test origin. The unit/integration suite uses disposable PGlite databases; it does not touch Neon. To run the authenticated course browser test against the Neon **development** database, set `E2E_OWNER_COURSE=1` before `npm run test:e2e`. It creates a temporary, signed owner-session fixture under a process-only test owner ID, completes a lesson, checks unlocking, accessibility and responsive views, then removes the fixture user and its progress. It does not replace the real GitHub OAuth flow; the owner's live OAuth callback and profile/session behavior were verified in Phase 2. See [the handoff](docs/HANDOFF.md) for exact observations.
 
-The learning profile stores native/learning language, target CEFR level, optional English Cambridge exam, daily study duration, and IANA timezone. Non-English languages can be selected, but their course content is not yet available. The current English route is an outline, not a working lesson system. Appearance remains a browser-local preference.
+The learning profile stores native/learning language, target CEFR level, optional English Cambridge exam, daily study duration, and IANA timezone. English is the only published course. Its A1–C2 level metadata contains five B1/B2 lessons across three units; other levels remain clearly marked as unpublished. `/course` shows actual progress and prerequisites, and an unlocked lesson saves its position and completion after the learner moves through its study/reflection blocks. Completion records traversal, not assessed proficiency or a graded exercise result. Non-English languages can still be selected, but their curricula are not published. Appearance remains a browser-local preference.
+
+The versioned curriculum lives in `src/content/en/course.ts`, validated by `src/content/course-schema.ts` and published by the idempotent `db:seed` command. Run the committed migrations before seeding. `db:verify` checks the English catalog counts without printing learner data; it also reports the profile row count so a development migration can be checked for accidental loss. Content rows and user progress use separate tables. See [architecture](docs/ARCHITECTURE.md) for the versioning and unlock rules.
 
 Read [handoff](docs/HANDOFF.md), [roadmap](docs/ROADMAP.md), and [architecture](docs/ARCHITECTURE.md) before continuing development. The full original brief is in `docs/MASTER-BRIEF.txt`.
