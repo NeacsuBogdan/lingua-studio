@@ -27,6 +27,46 @@ test('session endpoint does not create a session for a visitor', async ({
   expect(await response.json()).toBeNull();
 });
 
+test('sign-in click starts Better Auth and hands off to GitHub', async ({
+  page,
+}) => {
+  let githubNavigation = false;
+  const pageErrors: string[] = [];
+  const hmrSockets: string[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error.name));
+  page.on('websocket', (socket) => {
+    if (new URL(socket.url()).pathname === '/_next/hmr')
+      hmrSockets.push('unexpected HMR socket');
+  });
+  await page.route(
+    'https://github.com/login/oauth/authorize**',
+    async (route) => {
+      githubNavigation = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: '<!doctype html><title>OAuth handoff reached</title>',
+      });
+    },
+  );
+  await page.goto('/sign-in');
+  const signInRequest = page.waitForRequest(
+    (request) =>
+      request.method() === 'POST' &&
+      new URL(request.url()).pathname === '/api/auth/sign-in/social',
+  );
+  const signInResponse = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === '/api/auth/sign-in/social',
+  );
+  await page.getByRole('button', { name: 'Continue with GitHub' }).click();
+  await signInRequest;
+  expect((await signInResponse).status()).toBe(200);
+  await expect.poll(() => githubNavigation).toBe(true);
+  expect(pageErrors).toEqual([]);
+  expect(hmrSockets).toEqual([]);
+});
+
 test('a forged session cookie cannot open the app', async ({ page }) => {
   await page.context().addCookies([
     {

@@ -73,3 +73,5 @@ Current state: **Phase 3 complete** on `feat/phase-3-content-course-engine`. Pha
 - [x] Desktop/mobile/320 px, light/dark, keyboard, accessibility, console and overflow checks pass
 
 Phase 3 acceptance is complete. The study/reflection blocks record traversal, not graded performance or proficiency. Phase 4 has not started.
+
+Pre-merge runtime check (2026-09-25): a fresh direct HTTP development session used `ws://` HMR, hydrated the sign-in button and reached GitHub authorization through a successful Better Auth POST. The production E2E suite now covers the click-to-GitHub handoff and confirms there is no HMR socket. The earlier `wss://` browser state could not be reproduced after restarting the dev server. The owner should confirm the live callback and persistent session in the restarted browser session before merging.

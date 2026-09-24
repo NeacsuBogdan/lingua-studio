@@ -4,6 +4,13 @@
 
 Phases 0–3 are complete on `feat/phase-3-content-course-engine`; Phase 4 has not started. The Phase 2 owner GitHub OAuth/session/profile implementation remains intact. The Neon development database contains the additive Phase 3 schema and English course; it still has one pre-existing learner profile. The owner had signed out at the end of Phase 2, so the next personal use begins with a normal GitHub sign-in.
 
+## Development sign-in investigation (2026-09-25)
+
+- A reported local `wss://127.0.0.1:3000/_next/hmr` error and apparently inactive sign-in button were investigated before merge. The owner restarted the development server and reported `[HMR] connected` and working sign-in. The original `wss://` state was not reproducible in a fresh direct HTTP run, so its exact cause remains unconfirmed. The installed Next.js 16.3.6 HMR client derives its socket protocol from the browser page protocol unless an absolute asset prefix overrides it; this project configures no asset prefix, HTTPS proxy or custom HMR URL. A direct `http://127.0.0.1:3000/sign-in` run opened `ws://127.0.0.1:3000/_next/hmr`.
+- Fresh Playwright development inspection found the React click handler hydrated, no failed Next scripts or page errors, and a click sent `POST /api/auth/sign-in/social` with status 200 before navigating to GitHub authorization. In a restricted network sandbox, the same POST failed because access to Neon returned `EACCES`; that failure does not establish a bad OAuth credential or explain the owner's earlier browser state. With network access, the POST succeeded.
+- A new production E2E regression test checks the click, Better Auth POST and GitHub handoff on the actual `127.0.0.1:3100` test origin. It intercepts GitHub before account authorization, so it cannot prove a live callback or owner session by itself. The previous Phase 2 live callback/session checks remain documented below. Recheck the owner's live callback and session before declaring the branch ready for merge.
+- After the investigation, lint, typecheck, Prettier, all 26 Vitest tests, all 13 production E2E tests (including the temporary authenticated course fixture), production build and Neon connection check passed. The production sign-in test observed no HMR socket or client page error. No auth flow or secret values were changed.
+
 ## Phase 3 implementation
 
 - The content model is language → course → CEFR level → unit → lesson → ordered activity blocks, with a prerequisite junction table and separate user/lesson progress. Languages now carry native names, writing direction and active status. The learner profile supplies the native→learning direction; English is the only active published course.

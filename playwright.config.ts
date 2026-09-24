@@ -15,10 +15,12 @@ export default defineConfig({
       'node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3100',
     url: 'http://127.0.0.1:3100',
     reuseExistingServer: false,
-    env:
-      process.env.E2E_OWNER_COURSE === '1'
+    env: {
+      BETTER_AUTH_URL: 'http://127.0.0.1:3100',
+      ...(process.env.E2E_OWNER_COURSE === '1'
         ? { GITHUB_OWNER_ID: '987654321012345678' }
-        : undefined,
+        : {}),
+    },
   },
   reporter: 'list',
 });
