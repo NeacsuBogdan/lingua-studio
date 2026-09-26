@@ -1,6 +1,6 @@
 # Lingua Studio
 
-Personal language-learning application. Phases 0–3 are merged into main. Phase 4 adds a schema-driven exercise engine with deterministic server grading, saved feedback and immutable attempts; final Phase 4 validation is tracked in the roadmap. GitHub owner-only authentication, PostgreSQL sessions and learner preferences remain in place.
+Personal language-learning application. Phases 0–3 are merged into main. Phase 4 adds a schema-driven exercise engine with deterministic server grading, saved feedback and immutable attempts. [Draft PR #3](https://github.com/NeacsuBogdan/lingua-studio/pull/3) has passed GitHub Actions; manual/live owner validation remains open in the roadmap. GitHub owner-only authentication, PostgreSQL sessions and learner preferences remain in place.
 
 ## Local setup
 

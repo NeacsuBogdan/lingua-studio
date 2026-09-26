@@ -91,6 +91,6 @@ Historical Phase 3 runtime check (2026-09-25): a fresh direct HTTP development s
 - [x] Authenticated production E2E exercise journey, Axe and responsive/keyboard checks on isolated PostgreSQL 17
 - [x] Final lint, typecheck, format, 66 tests, clean migration generation, build and audit
 - [ ] Real owner GitHub login and manual exercise/retry/completion/persistence UX validation
-- [ ] GitHub Actions CI passed on the final branch revision
+- [x] GitHub Actions CI passed on the implementation revision; require green CI on every later revision
 
-Phase 4 is not complete. Phase 5 has not started.
+Phase 4 is not complete. [Draft PR #3](https://github.com/NeacsuBogdan/lingua-studio/pull/3) targets main; the manual/live owner gate remains open. Phase 5 has not started.
