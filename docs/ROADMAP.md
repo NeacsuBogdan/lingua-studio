@@ -87,7 +87,7 @@ Historical Phase 3 runtime check (2026-09-25): a fresh direct HTTP development s
 - [x] Exercise traversal requires a saved attempt; correctness remains separate from completion
 - [x] Intentional version-2 English lessons and idempotent ordering-safe seed
 - [x] PGlite migration, preservation, evaluator and security-boundary tests
-- [ ] Migration/seed applied and safely repeated in Neon; existing owner data preserved
+- [x] Migration/seed applied and safely repeated in Neon; existing owner data preserved
 - [x] Authenticated production E2E exercise journey, Axe and responsive/keyboard checks on isolated PostgreSQL 17
 - [x] Final lint, typecheck, format, 66 tests, clean migration generation, build and audit
 - [ ] Real owner GitHub login and manual exercise/retry/completion/persistence UX validation
