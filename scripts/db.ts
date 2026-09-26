@@ -72,7 +72,10 @@ async function main() {
       const [summary] = await sql`
         select
           (select count(*)::integer from learner_profiles) as profiles,
-          (select count(*)::integer from users where email like 'phase3-e2e-%@example.test') as test_fixtures,
+          (select count(*)::integer from users where email like 'phase3-e2e-%@example.test' or email like 'phase4-e2e-%@example.test') as test_fixtures,
+          (select count(*)::integer from exercise_attempts) as attempts,
+          (select count(distinct type)::integer from lesson_activities where type not in ('explanation', 'reflection')) as exercise_types,
+          (select count(*)::integer from lessons where content_version <> 2) as outdated_lessons,
           (select count(*)::integer from courses where id = 'english-core' and language_code = 'en') as courses,
           (select count(*)::integer from course_levels where course_id = 'english-core') as levels,
           (select count(*)::integer from units u join course_levels l on l.id = u.course_level_id where l.course_id = 'english-core') as units,
@@ -86,12 +89,14 @@ async function main() {
         summary.levels !== 6 ||
         summary.units !== 3 ||
         summary.lessons !== 5 ||
-        summary.activities !== 10 ||
+        summary.activities !== 18 ||
+        summary.exercise_types !== 7 ||
+        summary.outdated_lessons !== 0 ||
         summary.prerequisites !== 4
       ) {
-        throw new Error('Unexpected Phase 3 database state');
+        throw new Error('Unexpected published course database state');
       }
-      console.log('Phase 3 database verification (counts only):', summary);
+      console.log('Course database verification (counts only):', summary);
     } else if (command === 'inspect') {
       const [connection] = await sql`
         select current_database() as database,

@@ -9,6 +9,7 @@ import {
   lessonActivities,
   lessonPrerequisites,
   lessonProgress,
+  exerciseAttempts,
 } from '../db/schema';
 import { learningActivitySchema } from '../../content/course-schema';
 
@@ -18,7 +19,10 @@ type ProgressRow = typeof lessonProgress.$inferSelect;
 export type LessonState = 'locked' | 'available' | 'in_progress' | 'completed';
 
 export class CourseError extends Error {
-  constructor(public code: 'not_found' | 'locked' | 'not_started' | 'stale') {
+  constructor(
+    public code:
+      'not_found' | 'locked' | 'not_started' | 'stale' | 'answer_required',
+  ) {
     super(code);
   }
 }
@@ -292,12 +296,15 @@ export async function advanceLesson(
   userId: string,
   lessonId: string,
   expectedPosition: number,
+  expectedVersion: number,
 ) {
   const lesson = await gate(db, userId, lessonId);
+  if (lesson.contentVersion !== expectedVersion) throw new CourseError('stale');
   const blocks = await db
-    .select({ id: lessonActivities.id })
+    .select({ id: lessonActivities.id, type: lessonActivities.type })
     .from(lessonActivities)
-    .where(eq(lessonActivities.lessonId, lessonId));
+    .where(eq(lessonActivities.lessonId, lessonId))
+    .orderBy(asc(lessonActivities.sortOrder));
   if (
     !blocks.length ||
     !Number.isInteger(expectedPosition) ||
@@ -319,6 +326,21 @@ export async function advanceLesson(
     throw new CourseError('not_started');
   if (progress.status === 'completed') return progress;
   if (progress.position !== expectedPosition) throw new CourseError('stale');
+  const block = blocks[expectedPosition];
+  if (block.type !== 'explanation' && block.type !== 'reflection') {
+    const [attempt] = await db
+      .select({ id: exerciseAttempts.id })
+      .from(exerciseAttempts)
+      .where(
+        and(
+          eq(exerciseAttempts.userId, userId),
+          eq(exerciseAttempts.activityId, block.id),
+          eq(exerciseAttempts.contentVersion, lesson.contentVersion),
+        ),
+      )
+      .limit(1);
+    if (!attempt) throw new CourseError('answer_required');
+  }
   const final = expectedPosition === blocks.length - 1;
   const [updated] = await db
     .update(lessonProgress)

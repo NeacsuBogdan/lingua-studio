@@ -48,6 +48,7 @@ export async function startLessonAction(lessonId: string, data: FormData) {
 export async function advanceLessonAction(
   lessonId: string,
   expectedPosition: number,
+  contentVersion: number,
   data: FormData,
 ) {
   void data;
@@ -55,7 +56,13 @@ export async function advanceLessonAction(
   const position = positionSchema.parse(expectedPosition);
   const { db, userId } = await authorizeLesson(id);
   try {
-    await advanceLesson(db, userId, id, position);
+    await advanceLesson(
+      db,
+      userId,
+      id,
+      position,
+      z.number().int().positive().parse(contentVersion),
+    );
   } catch (error) {
     if (!(error instanceof CourseError && error.code === 'stale')) throw error;
   }

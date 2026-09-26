@@ -3,6 +3,10 @@ import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { eq } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
+import { isExercise } from '../src/content/activity-schema';
+import { submitExercise } from '../src/server/exercises/repository';
+import { correctAnswer } from './helpers/exercise';
 import * as schema from '../src/server/db/schema';
 import type { getDb } from '../src/server/db/client';
 import { englishCatalog } from '../src/content/en/course';
@@ -76,7 +80,7 @@ describe('English course publication', () => {
     expect(await pgliteDb.select().from(schema.units)).toHaveLength(3);
     expect(await pgliteDb.select().from(schema.lessons)).toHaveLength(5);
     expect(await pgliteDb.select().from(schema.lessonActivities)).toHaveLength(
-      10,
+      18,
     );
     const [profile] = await pgliteDb
       .select()
@@ -110,22 +114,22 @@ describe('server-side progression', () => {
       startLesson(db, firstUserId, 'en-b1-narrative'),
     ).rejects.toMatchObject({ code: 'locked' });
     await expect(
-      advanceLesson(db, firstUserId, 'en-b1-narrative', 0),
+      advanceLesson(db, firstUserId, 'en-b1-narrative', 0, 2),
     ).rejects.toMatchObject({ code: 'locked' });
     await expect(
-      advanceLesson(db, firstUserId, 'en-b1-present-perfect', 0),
+      advanceLesson(db, firstUserId, 'en-b1-present-perfect', 0, 2),
     ).rejects.toMatchObject({ code: 'not_started' });
     const started = await startLesson(db, firstUserId, 'en-b1-present-perfect');
     expect(started).toMatchObject({
       status: 'in_progress',
       position: 0,
-      contentVersion: 1,
+      contentVersion: 2,
     });
     expect(started.startedAt).toBeInstanceOf(Date);
     expect(
       (await getLessonView(db, firstUserId, 'en', 'en-b1-present-perfect'))
         .activities,
-    ).toHaveLength(2);
+    ).toHaveLength(5);
     expect(
       (await getCourseMap(db, firstUserId, 'en'))?.recommended?.state,
     ).toBe('in_progress');
@@ -134,17 +138,37 @@ describe('server-side progression', () => {
       firstUserId,
       'en-b1-present-perfect',
       0,
+      2,
     );
     expect(advanced.position).toBe(1);
     await expect(
-      advanceLesson(db, firstUserId, 'en-b1-present-perfect', 0),
+      advanceLesson(db, firstUserId, 'en-b1-present-perfect', 0, 2),
     ).rejects.toMatchObject({ code: 'stale' });
-    const completed = await advanceLesson(
+    let completed = advanced;
+    const view = await getLessonView(
       db,
       firstUserId,
+      'en',
       'en-b1-present-perfect',
-      1,
     );
+    for (let position = 1; position < view.activities.length; position++) {
+      const activity = view.activities[position];
+      if (isExercise(activity))
+        await submitExercise(db, firstUserId, 'en', {
+          submissionId: randomUUID(),
+          lessonId: view.lesson.id,
+          activityId: activity.id,
+          contentVersion: 2,
+          answer: correctAnswer(activity),
+        });
+      completed = await advanceLesson(
+        db,
+        firstUserId,
+        view.lesson.id,
+        position,
+        2,
+      );
+    }
     expect(completed.status).toBe('completed');
     expect(completed.completedAt).toBeInstanceOf(Date);
     expect((await getCourseMap(db, firstUserId, 'en'))?.recommended?.id).toBe(
@@ -157,8 +181,8 @@ describe('server-side progression', () => {
       startLesson(db, secondUserId, 'en-b1-narrative'),
     ).rejects.toMatchObject({ code: 'locked' });
     expect(
-      await advanceLesson(db, firstUserId, 'en-b1-present-perfect', 1),
-    ).toMatchObject({ status: 'completed', position: 2 });
+      await advanceLesson(db, firstUserId, 'en-b1-present-perfect', 1, 2),
+    ).toMatchObject({ status: 'completed', position: 5 });
     await seedEnglishCourse(db);
     const [saved] = await pgliteDb
       .select()
@@ -170,7 +194,7 @@ describe('server-side progression', () => {
   it('starts a revised lesson at its new content version without carrying over completion', async () => {
     await pgliteDb
       .update(schema.lessons)
-      .set({ contentVersion: 2 })
+      .set({ contentVersion: 3 })
       .where(eq(schema.lessons.id, 'en-b1-present-perfect'));
     expect((await getCourseMap(db, firstUserId, 'en'))?.recommended?.id).toBe(
       'en-b1-present-perfect',
@@ -181,7 +205,7 @@ describe('server-side progression', () => {
       'en-b1-present-perfect',
     );
     expect(restarted).toMatchObject({
-      contentVersion: 2,
+      contentVersion: 3,
       status: 'in_progress',
       position: 0,
       completedAt: null,

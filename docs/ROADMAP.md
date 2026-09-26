@@ -1,34 +1,34 @@
 # Implementation roadmap
 
-Current state: **Phase 3 complete** on `feat/phase-3-content-course-engine`. Phase 4 is next and has not started.
+Current state: **Phases 0–3 merged into main; Phase 4 under validation** on `feat/phase-4-exercise-engine`. Phase 5 has not started.
 
-| Phase | Scope                           | Status    |
-| ----- | ------------------------------- | --------- |
-| 0     | DISCOVERY AND ARCHITECTURE      | Completed |
-| 1     | PROJECT FOUNDATION              | Completed |
-| 2     | AUTHENTICATION AND PROFILE      | Completed |
-| 3     | CONTENT AND COURSE ENGINE       | Completed |
-| 4     | EXERCISE ENGINE                 | Planned   |
-| 5     | VOCABULARY SYSTEM               | Planned   |
-| 6     | SPACED REPETITION               | Planned   |
-| 7     | MISTAKE ENGINE                  | Planned   |
-| 8     | DAILY LEARNING                  | Planned   |
-| 9     | PLACEMENT TEST                  | Planned   |
-| 10    | DASHBOARD AND ANALYTICS         | Planned   |
-| 11    | GAMIFICATION                    | Planned   |
-| 12    | READING                         | Planned   |
-| 13    | LISTENING                       | Planned   |
-| 14    | PRONUNCIATION AND SPEAKING      | Planned   |
-| 15    | WRITING                         | Planned   |
-| 16    | CAMBRIDGE PREPARATION           | Planned   |
-| 17    | MOCK EXAMS                      | Planned   |
-| 18    | CURRICULUM EXPANSION            | Planned   |
-| 19    | ADVANCED ADAPTIVE LEARNING      | Planned   |
-| 20    | OPTIONAL AI ARCHITECTURE        | Planned   |
-| 21    | MULTI-LANGUAGE FOUNDATION       | Planned   |
-| 22    | JAPANESE-SPECIFIC ENGINE        | Planned   |
-| 23    | POLISH AND PRODUCTION READINESS | Planned   |
-| 24    | DEPLOYMENT                      | Planned   |
+| Phase | Scope                           | Status      |
+| ----- | ------------------------------- | ----------- |
+| 0     | DISCOVERY AND ARCHITECTURE      | Completed   |
+| 1     | PROJECT FOUNDATION              | Completed   |
+| 2     | AUTHENTICATION AND PROFILE      | Completed   |
+| 3     | CONTENT AND COURSE ENGINE       | Completed   |
+| 4     | EXERCISE ENGINE                 | In progress |
+| 5     | VOCABULARY SYSTEM               | Planned     |
+| 6     | SPACED REPETITION               | Planned     |
+| 7     | MISTAKE ENGINE                  | Planned     |
+| 8     | DAILY LEARNING                  | Planned     |
+| 9     | PLACEMENT TEST                  | Planned     |
+| 10    | DASHBOARD AND ANALYTICS         | Planned     |
+| 11    | GAMIFICATION                    | Planned     |
+| 12    | READING                         | Planned     |
+| 13    | LISTENING                       | Planned     |
+| 14    | PRONUNCIATION AND SPEAKING      | Planned     |
+| 15    | WRITING                         | Planned     |
+| 16    | CAMBRIDGE PREPARATION           | Planned     |
+| 17    | MOCK EXAMS                      | Planned     |
+| 18    | CURRICULUM EXPANSION            | Planned     |
+| 19    | ADVANCED ADAPTIVE LEARNING      | Planned     |
+| 20    | OPTIONAL AI ARCHITECTURE        | Planned     |
+| 21    | MULTI-LANGUAGE FOUNDATION       | Planned     |
+| 22    | JAPANESE-SPECIFIC ENGINE        | Planned     |
+| 23    | POLISH AND PRODUCTION READINESS | Planned     |
+| 24    | DEPLOYMENT                      | Planned     |
 
 ## Phase 1 acceptance
 
@@ -72,6 +72,25 @@ Current state: **Phase 3 complete** on `feat/phase-3-content-course-engine`. Pha
 - [x] Lint, typecheck, formatting, tests, E2E, build, migration check and dependency audit pass
 - [x] Desktop/mobile/320 px, light/dark, keyboard, accessibility, console and overflow checks pass
 
-Phase 3 acceptance is complete. The study/reflection blocks record traversal, not graded performance or proficiency. Phase 4 has not started.
+Phase 3 acceptance was complete before merge. Its study/reflection blocks recorded traversal; Phase 4 adds graded practice separately from completion.
 
-Pre-merge runtime check (2026-09-25): a fresh direct HTTP development session used `ws://` HMR, hydrated the sign-in button and reached GitHub authorization through a successful Better Auth POST. The production E2E suite now covers the click-to-GitHub handoff and confirms there is no HMR socket. The earlier `wss://` browser state could not be reproduced after restarting the dev server. The owner should confirm the live callback and persistent session in the restarted browser session before merging.
+Historical Phase 3 runtime check (2026-09-25): a fresh direct HTTP development session used `ws://` HMR, hydrated the sign-in button and reached GitHub authorization through a successful Better Auth POST. Production E2E covers the click-to-GitHub handoff and confirms no HMR socket. The earlier `wss://` state could not be reproduced after restarting development. Current live login validation is tracked under Phase 4 below.
+
+## Phase 4 acceptance
+
+- [x] Schema-driven mixed study/exercise flow supports all seven initial exercise types
+- [x] Strict concrete payloads and discriminated answer validation reject malformed definitions/submissions
+- [x] Deterministic server evaluators and explicit NFC/whitespace/case/punctuation policy
+- [x] Pre-submit presentation excludes hidden answers, explanations and option feedback
+- [x] Immutable attempt schema, feedback snapshots, retry records and transport replay deduplication
+- [x] Owner-derived identity, current activity/version, active course and prerequisite checks
+- [x] Exercise traversal requires a saved attempt; correctness remains separate from completion
+- [x] Intentional version-2 English lessons and idempotent ordering-safe seed
+- [x] PGlite migration, preservation, evaluator and security-boundary tests
+- [ ] Migration/seed applied and safely repeated in Neon; existing owner data preserved
+- [x] Authenticated production E2E exercise journey, Axe and responsive/keyboard checks on isolated PostgreSQL 17
+- [x] Final lint, typecheck, format, 66 tests, clean migration generation, build and audit
+- [ ] Real owner GitHub login and manual exercise/retry/completion/persistence UX validation
+- [ ] GitHub Actions CI passed on the final branch revision
+
+Phase 4 is not complete. Phase 5 has not started.

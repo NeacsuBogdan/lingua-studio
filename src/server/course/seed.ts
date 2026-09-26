@@ -9,6 +9,7 @@ import {
   lessonPrerequisites,
 } from '../db/schema';
 import type { getDb } from '../db/client';
+import { eq, sql } from 'drizzle-orm';
 
 type Database = ReturnType<typeof getDb>;
 
@@ -106,6 +107,23 @@ export async function seedEnglishCourse(db: Database) {
                 contentVersion: lesson.contentVersion,
               },
             });
+          const existing = await tx
+            .select({ id: lessonActivities.id })
+            .from(lessonActivities)
+            .where(eq(lessonActivities.lessonId, lesson.id));
+          if (
+            existing.some(
+              (row) => !lesson.activities.some((block) => block.id === row.id),
+            )
+          )
+            throw new Error(
+              'Removing published activity IDs requires an explicit migration.',
+            );
+          // Make room for reordered blocks before inserting new exercise IDs.
+          await tx
+            .update(lessonActivities)
+            .set({ sortOrder: sql`${lessonActivities.sortOrder} + 10000` })
+            .where(eq(lessonActivities.lessonId, lesson.id));
           for (const block of lesson.activities) {
             await tx
               .insert(lessonActivities)

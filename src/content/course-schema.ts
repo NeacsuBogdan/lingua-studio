@@ -1,30 +1,22 @@
 import { z } from 'zod';
 import { cefrSchema } from './schema';
+import {
+  learningActivitySchema as activity,
+  skillSchema,
+} from './activity-schema';
+export { learningActivitySchema } from './activity-schema';
+export type { LearningActivity } from './activity-schema';
 
 const id = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 const order = z.number().int().positive();
 const languageCode = z.string().regex(/^[a-z]{2,3}(?:-[A-Z]{2})?$/);
-const activity = z
-  .object({
-    id,
-    order,
-    type: z.enum(['explanation', 'reflection']),
-    instructions: z.string().min(8),
-    prompt: z.string().min(12),
-    explanation: z.string().min(12),
-    skill: z.enum(['grammar', 'vocabulary', 'reading', 'communication']),
-    level: cefrSchema,
-    tags: z.array(z.string().min(2)).min(1),
-    payload: z.object({ example: z.string().min(8) }).strict(),
-  })
-  .strict();
 const lesson = z
   .object({
     id,
     order,
     title: z.string().min(5),
     summary: z.string().min(15),
-    skill: activity.shape.skill,
+    skill: skillSchema,
     estimatedMinutes: z.number().int().min(2).max(60),
     contentVersion: z.number().int().positive(),
     prerequisiteIds: z.array(id),
@@ -52,7 +44,7 @@ const level = z
   .strict();
 export const courseCatalogSchema = z
   .object({
-    schemaVersion: z.literal(1),
+    schemaVersion: z.literal(2),
     language: z
       .object({
         code: languageCode,
@@ -144,5 +136,3 @@ export const courseCatalogSchema = z
   });
 
 export type CourseCatalog = z.infer<typeof courseCatalogSchema>;
-export type LearningActivity = z.infer<typeof activity>;
-export const learningActivitySchema = activity;

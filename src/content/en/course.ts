@@ -1,5 +1,6 @@
 import { curriculum } from '../curriculum';
 import { courseCatalogSchema } from '../course-schema';
+import { englishExercises } from './exercises';
 
 const blocks = (
   lessonId: string,
@@ -32,9 +33,10 @@ const blocks = (
     tags: first.tags,
     payload: { example: first.example },
   },
+  ...(englishExercises[lessonId] ?? []),
   {
     id: `${lessonId}-reflect`,
-    order: 2,
+    order: 2 + (englishExercises[lessonId]?.length ?? 0),
     type: 'reflection' as const,
     skill,
     level,
@@ -62,7 +64,7 @@ const b1Units = [
           'Distinguish a finished past event from an experience with a present connection.',
         skill: 'grammar',
         estimatedMinutes: 8,
-        contentVersion: 1,
+        contentVersion: 2,
         prerequisiteIds: [],
         activities: blocks(
           'en-b1-present-perfect',
@@ -99,7 +101,7 @@ const b1Units = [
           'Use past simple, continuous and perfect to show what happened and what came before.',
         skill: 'grammar',
         estimatedMinutes: 9,
-        contentVersion: 1,
+        contentVersion: 2,
         prerequisiteIds: ['en-b1-present-perfect'],
         activities: blocks(
           'en-b1-narrative',
@@ -144,7 +146,7 @@ const b1Units = [
           'Choose natural verb–noun combinations in work and daily life.',
         skill: 'vocabulary',
         estimatedMinutes: 7,
-        contentVersion: 1,
+        contentVersion: 2,
         prerequisiteIds: ['en-b1-narrative'],
         activities: blocks(
           'en-b1-collocations',
@@ -177,7 +179,7 @@ const b1Units = [
           'Ask for help clearly while matching the level of formality to the situation.',
         skill: 'communication',
         estimatedMinutes: 7,
-        contentVersion: 1,
+        contentVersion: 2,
         prerequisiteIds: ['en-b1-collocations'],
         activities: blocks(
           'en-b1-polite-requests',
@@ -224,7 +226,7 @@ const b2Units = [
           'Separate a writer’s stated claim from a cautious implication.',
         skill: 'reading',
         estimatedMinutes: 10,
-        contentVersion: 1,
+        contentVersion: 2,
         prerequisiteIds: ['en-b1-polite-requests'],
         activities: blocks(
           'en-b2-reading-inference',
@@ -258,7 +260,7 @@ const b2Units = [
 ];
 
 export const englishCatalog = courseCatalogSchema.parse({
-  schemaVersion: 1,
+  schemaVersion: 2,
   language: {
     code: 'en',
     name: 'English',
@@ -272,7 +274,7 @@ export const englishCatalog = courseCatalogSchema.parse({
     title: 'English: A thoughtful path',
     description:
       'A structured route from foundations to nuanced expression, with a focused B1–B2 starting collection.',
-    contentVersion: 1,
+    contentVersion: 2,
     levels: curriculum.map((item, index) => ({
       id: `english-${item.level.toLowerCase()}`,
       order: index + 1,
