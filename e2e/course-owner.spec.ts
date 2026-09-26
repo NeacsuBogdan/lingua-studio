@@ -36,7 +36,7 @@ test.beforeAll(async () => {
     const [user] = await db
       .insert(schema.users)
       .values({
-        email: `phase3-e2e-${randomUUID()}@example.test`,
+        email: `phase4-e2e-${randomUUID()}@example.test`,
         name: 'Course E2E learner',
         emailVerified: true,
       })
@@ -75,15 +75,17 @@ test.afterAll(async () => {
   }
 });
 
-test('owner completes the first lesson and unlocks the second across reloads', async ({
+test('owner practises all seven exercise types and retains progress securely', async ({
   page,
   browser,
+  request,
 }, testInfo) => {
+  test.setTimeout(120000);
   const signature = createHmac('sha256', secret).update(token).digest('base64');
   await page.context().addCookies([
     {
       name: 'better-auth.session_token',
-      value: encodeURIComponent(`${token}.${signature}`),
+      value: encodeURIComponent(token + '.' + signature),
       domain: '127.0.0.1',
       path: '/',
       httpOnly: true,
@@ -91,23 +93,50 @@ test('owner completes the first lesson and unlocks the second across reloads', a
     },
   ]);
   const errors: string[] = [];
-  page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/course');
-  await expect(
-    page.getByRole('heading', { name: 'Your English learning path.' }),
-  ).toBeVisible();
-  await expect(page.getByText('0 / 5')).toBeVisible();
-  await expect(
-    page.getByText('Locked · complete earlier lessons').first(),
-  ).toBeVisible();
+  page.on('pageerror', (error) => errors.push(error.name));
+  const payload = {
+    submissionId: randomUUID(),
+    lessonId: 'en-b1-present-perfect',
+    activityId: 'en-b1-present-perfect-choice',
+    contentVersion: 2,
+    answer: { type: 'multiple_choice', optionId: 'sent' },
+  };
+  expect(
+    (await request.post('/api/exercises/attempt', { data: payload })).status(),
+  ).toBe(401);
   await page.goto('/course/lesson/en-b1-narrative');
   await expect(
     page.getByRole('heading', { name: 'This lesson is locked.' }),
   ).toBeVisible();
+  const api = page.context().request;
+  const headers = { Origin: 'http://127.0.0.1:3100' };
+  expect(
+    (
+      await api.post('/api/exercises/attempt', {
+        headers,
+        data: {
+          ...payload,
+          lessonId: 'en-b1-narrative',
+          activityId: 'en-b1-narrative-reorder',
+        },
+      })
+    ).status(),
+  ).toBe(409);
+  expect(
+    (
+      await api.post('/api/exercises/attempt', {
+        headers,
+        data: { ...payload, userId: randomUUID() },
+      })
+    ).status(),
+  ).toBe(400);
+  expect(
+    (
+      await api.post('/api/exercises/attempt', { headers, data: payload })
+    ).status(),
+  ).toBe(409);
+
   await page.goto('/course/lesson/en-b1-present-perfect');
-  await expect(
-    page.getByRole('heading', { name: 'The past that matters now' }),
-  ).toBeVisible();
   const startForm = await page
     .locator('form')
     .first()
@@ -121,8 +150,7 @@ test('owner completes the first lesson and unlocks the second across reloads', a
     await anonymousPage.evaluate((markup) => {
       const container = document.createElement('div');
       container.innerHTML = markup;
-      const form = container.querySelector('form');
-      if (!form) throw new Error('Start form unavailable');
+      const form = container.querySelector('form')!;
       form.action = '/course/lesson/en-b1-present-perfect';
       document.body.append(form);
     }, startForm);
@@ -135,93 +163,283 @@ test('owner completes the first lesson and unlocks the second across reloads', a
   } finally {
     await anonymousContext.close();
   }
-  await page.reload();
-  await expect(
-    page.getByRole('button', { name: 'Begin lesson' }),
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Begin lesson' }).click();
-  await expect(page.getByText('BLOCK 1 OF 2')).toBeVisible();
-  await page.screenshot({
-    path: testInfo.outputPath('lesson-desktop-light.png'),
-  });
-  const lessonAccessibility = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-    .analyze();
+
+  async function inspectExercise(name: string) {
+    for (const theme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme: theme });
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      for (const width of [1280, 390, 320]) {
+        await page.setViewportSize({ width, height: 900 });
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true);
+        await page.evaluate(() => window.scrollTo(0, 0));
+        if (width === 320 || (width === 1280 && theme === 'light'))
+          await page.screenshot({
+            path: testInfo.outputPath(
+              name + '-' + width + '-' + theme + '.png',
+            ),
+            fullPage: true,
+          });
+      }
+      const axe = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze();
+      expect(axe.violations.map((violation) => violation.id)).toEqual([]);
+    }
+  }
+  async function grade(correct = true) {
+    await page.getByRole('button', { name: 'Check answer' }).click();
+    await expect(
+      page.getByRole('heading', {
+        name: correct ? 'Correct' : 'Not quite yet',
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByText('Why this works', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('status', { name: 'Answer feedback' }),
+    ).toBeFocused();
+  }
+  async function begin(id: string) {
+    await page.goto('/course/lesson/' + id);
+    await page.getByRole('button', { name: 'Begin lesson' }).click();
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    expect(await page.content()).not.toMatch(
+      /correctOptionId|acceptedAnswers|correctOrder|correctPairs/,
+    );
+  }
+  async function finish() {
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    await page.getByRole('button', { name: 'Complete lesson' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Lesson completed.' }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByRole('heading', { name: 'Lesson completed.' }),
+    ).toBeVisible();
+  }
+
+  await begin('en-b1-present-perfect');
   expect(
-    lessonAccessibility.violations.map((violation) => violation.id),
-  ).toEqual([]);
+    (
+      await api.post('/api/exercises/attempt', {
+        headers,
+        data: { ...payload, activityId: 'en-b1-narrative-typed' },
+      })
+    ).status(),
+  ).toBe(409);
+  expect(
+    (
+      await api.post('/api/exercises/attempt', {
+        headers,
+        data: { ...payload, contentVersion: 1 },
+      })
+    ).status(),
+  ).toBe(409);
+  expect(await page.content()).not.toContain(
+    'Yesterday is a finished past time. Use past simple: sent.',
+  );
+  await inspectExercise('multiple-choice');
+  expect(
+    (
+      await api.post('/api/exercises/attempt', {
+        headers: { Origin: 'https://untrusted.example' },
+        data: payload,
+      })
+    ).status(),
+  ).toBe(403);
+  expect(
+    (
+      await api.post('/api/exercises/attempt', {
+        headers,
+        data: {
+          ...payload,
+          answer: { type: 'typed_answer', text: 'Forged grading' },
+        },
+      })
+    ).status(),
+  ).toBe(400);
+  await page
+    .getByRole('radio', { name: 'I have sent the email yesterday.' })
+    .check();
+  await grade(false);
   await page.reload();
-  await expect(page.getByText('BLOCK 1 OF 2')).toBeVisible();
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText('BLOCK 2 OF 2')).toBeVisible();
-  await page.getByRole('button', { name: 'Complete lesson' }).click();
   await expect(
-    page.getByRole('heading', { name: 'Lesson completed.' }),
+    page.getByRole('heading', { name: 'Not quite yet' }),
   ).toBeVisible();
-  await page.reload();
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await page
+    .getByRole('radio', { name: 'I sent the email yesterday.' })
+    .focus();
+  await page.keyboard.press('Space');
+  await grade();
+  await inspectExercise('choice-feedback');
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await inspectExercise('fill-gap');
+  await page
+    .getByLabel('Your answer', { exact: true })
+    .fill('have been living');
+  await page.route(
+    '**/api/exercises/attempt',
+    (route) =>
+      route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: '{"error":"Temporary test failure"}',
+      }),
+    { times: 1 },
+  );
+  await page.getByLabel('Your answer', { exact: true }).press('Enter');
   await expect(
-    page.getByRole('heading', { name: 'Lesson completed.' }),
-  ).toBeVisible();
+    page.getByRole('form', { name: 'Exercise answer' }).getByRole('alert'),
+  ).toContainText('Your answer could not be saved');
+  await expect(page.getByLabel('Your answer', { exact: true })).toHaveValue(
+    'have been living',
+  );
+  const fillSubmission = page.waitForRequest(
+    (request) =>
+      request.method() === 'POST' &&
+      new URL(request.url()).pathname === '/api/exercises/attempt',
+  );
+  await grade();
+  expect(
+    (
+      await api.post('/api/exercises/attempt', {
+        headers,
+        data: (await fillSubmission).postDataJSON(),
+      })
+    ).status(),
+  ).toBe(200);
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await inspectExercise('error-correction');
+  await page
+    .getByLabel('Your answer', { exact: true })
+    .fill('I went there yesterday.');
+  await grade();
+  await finish();
   await page.getByRole('link', { name: 'Return to learning path' }).click();
   await expect(page.getByText('1 / 5')).toBeVisible();
   await expect(
     page.getByRole('link', { name: 'Open A story with a clear sequence' }),
   ).toBeVisible();
 
-  await page.screenshot({
-    path: testInfo.outputPath('course-desktop-light.png'),
-    fullPage: true,
-  });
-  const accessibility = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-    .analyze();
-  expect(accessibility.violations.map((violation) => violation.id)).toEqual([]);
-  await page.emulateMedia({ colorScheme: 'dark' });
-  await page.reload();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await page.screenshot({
-    path: testInfo.outputPath('course-desktop-dark.png'),
-    fullPage: true,
-  });
-  for (const width of [390, 320]) {
-    await page.setViewportSize({ width, height: 850 });
-    await page.reload();
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
-      ),
-    ).toBe(true);
-    await page.screenshot({
-      path: testInfo.outputPath(`course-${width}-dark.png`),
-      fullPage: true,
-    });
+  await begin('en-b1-narrative');
+  await inspectExercise('sentence-reorder');
+  for (const text of [
+    'The train',
+    'had already left',
+    'when',
+    'we',
+    'arrived.',
+  ]) {
+    await page
+      .getByRole('button', { name: 'Add ' + text, exact: true })
+      .focus();
+    await page.keyboard.press('Enter');
   }
-  await page.screenshot({
-    path: testInfo.outputPath('course-320-viewport-dark.png'),
-  });
-  await page.goto('/course/lesson/en-b1-narrative');
-  await expect(
-    page.getByRole('button', { name: 'Begin lesson' }),
-  ).toBeVisible();
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
-  ).toBe(true);
-  await page.screenshot({ path: testInfo.outputPath('lesson-320-dark.png') });
-  await page.emulateMedia({ colorScheme: 'light' });
+  await page
+    .getByRole('button', { name: 'Move when earlier', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Move when later', exact: true })
+    .focus();
+  await page.keyboard.press('Enter');
+  await grade();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await inspectExercise('typed-answer');
+  await page.getByLabel('Your answer', { exact: true }).fill(' HAD   LEFT ');
+  await grade();
+  await finish();
+
+  await begin('en-b1-collocations');
+  await inspectExercise('matching');
+  await page.getByLabel('make', { exact: true }).selectOption('decision');
+  await page.getByLabel('take', { exact: true }).selectOption('break');
+  await page.getByLabel('keep', { exact: true }).selectOption('promise');
+  await grade();
+  await finish();
+
+  await begin('en-b1-polite-requests');
+  await inspectExercise('translation');
+  await page
+    .getByLabel('Your answer', { exact: true })
+    .fill('Could you please send me the file by this evening?');
+  await grade();
+  await finish();
+
+  await begin('en-b2-reading-inference');
+  await page
+    .getByRole('radio', {
+      name: 'The evidence may be too limited for a firm conclusion.',
+    })
+    .check();
+  await grade();
+  await finish();
+  await page.getByRole('link', { name: 'Return to learning path' }).click();
+  await expect(page.getByText('5 / 5')).toBeVisible();
   await page.reload();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await page.screenshot({ path: testInfo.outputPath('lesson-320-light.png') });
-  const mobileAccessibility = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-    .analyze();
-  expect(
-    mobileAccessibility.violations.map((violation) => violation.id),
-  ).toEqual([]);
-  await page.keyboard.press('Tab');
-  await expect(
-    page.getByRole('link', { name: 'Skip to content' }),
-  ).toBeFocused();
+  await expect(page.getByText('5 / 5')).toBeVisible();
+
+  for (const theme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: theme });
+    for (const width of [1280, 390, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.reload();
+      await expect(
+        page.getByRole('button', { name: 'Sign out' }),
+      ).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      await page.screenshot({
+        path: testInfo.outputPath('course-' + width + '-' + theme + '.png'),
+        fullPage: true,
+      });
+    }
+  }
+  const rows = await drizzle(sql!, { schema })
+    .select()
+    .from(schema.exerciseAttempts)
+    .where(eq(schema.exerciseAttempts.userId, userId!));
+  expect(rows).toHaveLength(9);
+  expect(rows.filter((row) => !row.isCorrect)).toHaveLength(1);
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await expect(page).toHaveURL('/sign-in');
+  await page.goto('/course');
+  await expect(page).toHaveURL('/sign-in');
+  // A new real Better Auth session for the same isolated fixture retains practice.
+  const nextToken = randomBytes(32).toString('hex');
+  await drizzle(sql!, { schema })
+    .insert(schema.sessions)
+    .values({
+      userId: userId!,
+      token: nextToken,
+      expiresAt: new Date(Date.now() + 30 * 60_000),
+    });
+  const nextSignature = createHmac('sha256', secret)
+    .update(nextToken)
+    .digest('base64');
+  await page.context().addCookies([
+    {
+      name: 'better-auth.session_token',
+      value: encodeURIComponent(nextToken + '.' + nextSignature),
+      domain: '127.0.0.1',
+      path: '/',
+      httpOnly: true,
+      sameSite: 'Lax',
+    },
+  ]);
+  await page.goto('/course');
+  await expect(page.getByText('5 / 5')).toBeVisible();
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await expect(page).toHaveURL('/sign-in');
   expect(errors).toEqual([]);
 });

@@ -7,6 +7,9 @@ import { getOrCreateProfile } from '@/server/profile/repository';
 import { getDb } from '@/server/db/client';
 import { CourseError, getLessonView } from '@/server/course/repository';
 import { startLessonAction, advanceLessonAction } from './actions';
+import { isExercise, presentExercise } from '@/content/activity-schema';
+import { latestAttempt } from '@/server/exercises/repository';
+import { ExercisePlayer } from '@/components/exercises/exercise-player';
 
 export const metadata: Metadata = { title: 'Lesson' };
 
@@ -33,6 +36,16 @@ export default async function LessonPage({
   const { lesson, activities } = view;
   const position = Math.min(lesson.position, activities.length - 1);
   const block = activities[position];
+  const initialAttempt =
+    lesson.state === 'in_progress' && isExercise(block)
+      ? await latestAttempt(getDb(), owner.id, block.id, lesson.contentVersion)
+      : null;
+  const continueAction = advanceLessonAction.bind(
+    null,
+    lesson.id,
+    position,
+    lesson.contentVersion,
+  );
   return (
     <div className="lesson-page">
       <Link href="/course" className="lesson-back">
@@ -77,7 +90,11 @@ export default async function LessonPage({
                 <span className="small-label">{item.skill.toUpperCase()}</span>
                 <h4>{item.prompt}</h4>
                 <p>{item.explanation}</p>
-                <p className="lesson-review-example">{item.payload.example}</p>
+                {'example' in item.payload && (
+                  <p className="lesson-review-example">
+                    {item.payload.example}
+                  </p>
+                )}
               </article>
             ))}
           </div>
@@ -87,9 +104,9 @@ export default async function LessonPage({
           <p className="small-label">BEFORE YOU BEGIN</p>
           <h2>A focused study moment.</h2>
           <p>
-            Read each idea, pause to form your own response, then continue. This
-            lesson records the blocks you have worked through; answer checking
-            arrives with the exercise engine.
+            Read the ideas and practise with short exercises. Check an answer to
+            receive feedback, retry if useful, then continue. Each attempt is
+            saved; lesson completion records practice, not mastery.
           </p>
           <p className="lesson-meta">
             {activities.length} learning blocks · around{' '}
@@ -125,22 +142,37 @@ export default async function LessonPage({
           </div>
           <p className="lesson-instructions">{block.instructions}</p>
           <h2 id="activity-heading">{block.prompt}</h2>
-          <div className="lesson-example">
-            <span className="small-label">IN CONTEXT</span>
-            <p>{block.payload.example}</p>
-          </div>
-          <div className="lesson-explanation">
-            <span className="small-label">THE IDEA TO KEEP</span>
-            <p>{block.explanation}</p>
-          </div>
-          <form action={advanceLessonAction.bind(null, lesson.id, position)}>
-            <button className="primary-link" type="submit">
-              {position === activities.length - 1
-                ? 'Complete lesson'
-                : 'Continue'}{' '}
-              <ArrowRight size={17} />
-            </button>
-          </form>
+          {isExercise(block) ? (
+            <ExercisePlayer
+              key={`${block.id}:${lesson.contentVersion}`}
+              activity={presentExercise(block)}
+              lessonId={lesson.id}
+              contentVersion={lesson.contentVersion}
+              initialResult={initialAttempt?.result ?? null}
+              initialAnswer={initialAttempt?.answer ?? null}
+              continueAction={continueAction}
+              final={position === activities.length - 1}
+            />
+          ) : (
+            <>
+              <div className="lesson-example">
+                <span className="small-label">IN CONTEXT</span>
+                <p>{block.payload.example}</p>
+              </div>
+              <div className="lesson-explanation">
+                <span className="small-label">THE IDEA TO KEEP</span>
+                <p>{block.explanation}</p>
+              </div>
+              <form action={continueAction}>
+                <button className="primary-link" type="submit">
+                  {position === activities.length - 1
+                    ? 'Complete lesson'
+                    : 'Continue'}{' '}
+                  <ArrowRight size={17} />
+                </button>
+              </form>
+            </>
+          )}
         </section>
       )}
     </div>

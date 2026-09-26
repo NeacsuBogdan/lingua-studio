@@ -10,8 +10,12 @@ import {
   uniqueIndex,
   jsonb,
   primaryKey,
+  real,
+  index,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import type { LearningActivity } from '../../content/activity-schema';
+import type { ExerciseAnswer, GradingResult } from '../../lib/exercise-answer';
 export const cefr = pgEnum('cefr', ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
 export const exam = pgEnum('cambridge_exam', [
   'b2-first',
@@ -241,7 +245,7 @@ export const lessonActivities = pgTable(
     skill: text('skill').notNull(),
     level: cefr('level').notNull(),
     tags: jsonb('tags').$type<string[]>().notNull(),
-    payload: jsonb('payload').$type<Record<string, unknown>>().notNull(),
+    payload: jsonb('payload').$type<LearningActivity['payload']>().notNull(),
   },
   (t) => [
     uniqueIndex('lesson_activities_lesson_order_unique').on(
@@ -298,6 +302,54 @@ export const lessonProgress = pgTable(
     check(
       'lesson_progress_completion_consistent',
       sql`(${t.status} = 'completed' and ${t.completedAt} is not null) or (${t.status} = 'in_progress' and ${t.completedAt} is null)`,
+    ),
+  ],
+);
+
+export const exerciseAttempts = pgTable(
+  'exercise_attempts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    lessonId: text('lesson_id')
+      .notNull()
+      .references(() => lessons.id),
+    activityId: text('activity_id')
+      .notNull()
+      .references(() => lessonActivities.id),
+    contentVersion: integer('content_version').notNull(),
+    submissionId: uuid('submission_id').notNull(),
+    submittedAnswer: jsonb('submitted_answer')
+      .$type<ExerciseAnswer>()
+      .notNull(),
+    result: jsonb('result').$type<GradingResult>().notNull(),
+    isCorrect: boolean('is_correct').notNull(),
+    score: real('score').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('exercise_attempts_user_submission_unique').on(
+      t.userId,
+      t.submissionId,
+    ),
+    index('exercise_attempts_user_activity_version_idx').on(
+      t.userId,
+      t.activityId,
+      t.contentVersion,
+      t.createdAt,
+    ),
+    check('exercise_attempts_version_positive', sql`${t.contentVersion} > 0`),
+    check(
+      'exercise_attempts_score_range',
+      sql`${t.score} >= 0 and ${t.score} <= 1`,
+    ),
+    check(
+      'exercise_attempts_answer_object',
+      sql`jsonb_typeof(${t.submittedAnswer}) = 'object'`,
     ),
   ],
 );
