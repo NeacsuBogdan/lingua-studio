@@ -107,6 +107,6 @@ Phase 4 passed CI and owner manual validation; [PR #3](https://github.com/Neacsu
 - [x] Neon development migration/seed and existing-data preservation verified
 - [x] Lint, typecheck, format, 72 tests, 13 E2E, build, migration check and online audit pass
 - [ ] Real owner manual desktop/mobile, light/dark, keyboard, OAuth and persistence validation pass
-- [ ] GitHub CI passes on the final revision
+- [x] GitHub CI passed on the implementation revision; require green CI on every later revision
 
-Phase 5 remains in progress. Phase 6 has not started.
+Phase 5 remains in progress pending real-owner manual UX validation. [Draft PR #4](https://github.com/NeacsuBogdan/lingua-studio/pull/4) targets main; it has not been merged. Phase 6 has not started.

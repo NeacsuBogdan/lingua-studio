@@ -1,6 +1,6 @@
 # Lingua Studio
 
-Personal language-learning application. Phases 0–4 are complete on `main`; Phase 4 was manually validated and squash-merged at `669f46f`. Phase 5 is being developed on `feat/phase-5-vocabulary-system`. GitHub owner-only authentication, PostgreSQL sessions and learner preferences remain in place.
+Personal language-learning application. Phases 0–4 are complete on `main`; Phase 4 was manually validated and squash-merged at `669f46f`. Phase 5 is being developed on `feat/phase-5-vocabulary-system` in [draft PR #4](https://github.com/NeacsuBogdan/lingua-studio/pull/4). GitHub owner-only authentication, PostgreSQL sessions and learner preferences remain in place.
 
 ## Local setup
 
