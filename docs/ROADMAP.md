@@ -102,10 +102,10 @@ Phase 4 passed CI and owner manual validation; [PR #3](https://github.com/Neacsu
 - [x] Transactional introductions and trusted per-attempt practice evidence implemented
 - [x] Per-user saved vocabulary and deterministic evidence-derived practice status implemented
 - [x] Protected vocabulary browser, detail and lesson introduction UI implemented
-- [ ] Focused migration/domain/security tests and authenticated E2E pass
-- [ ] Local PostgreSQL migration/seed repeatability and preservation pass
-- [ ] Neon development migration/seed and existing-data preservation verified
-- [ ] Lint, typecheck, format, tests, E2E, build, migration check and audit pass
+- [x] Focused migration/domain/security tests and authenticated E2E pass
+- [x] Local PostgreSQL migration/seed repeatability and fixture cleanup pass
+- [x] Neon development migration/seed and existing-data preservation verified
+- [x] Lint, typecheck, format, 72 tests, 13 E2E, build, migration check and online audit pass
 - [ ] Real owner manual desktop/mobile, light/dark, keyboard, OAuth and persistence validation pass
 - [ ] GitHub CI passes on the final revision
 

@@ -40,6 +40,8 @@ Phase 4 adds `exercise_attempts`: a server-generated UUID, authenticated user, l
 
 The UI derives a cautious practice status from persisted introduction and attempt counts: `not encountered` (neither), `encountered` (introduction only), `practising` (one correct or any incorrect), `familiar` (at least two correct, none incorrect) and `strong` (at least four correct, none incorrect). An incorrect event lowers the label to `practising`; no status claims durable mastery. Saving without an encounter does not change status. No due dates, spaced-repetition algorithm or review queue exists. Phase 5 adds metadata and presentation to existing blocks without changing their order or grading, so lesson content version 2 is preserved.
 
+Migration `0005` is additive and was applied to Neon development only after isolated PostgreSQL 17 migration/seed/E2E passed. Read-only whole-row hashes of all Phase 0–4 tables, including auth/session/profile/progress/attempt data, matched before and after migration and both seed passes. The repository does not schedule reviews or infer errors beyond the recorded per-attempt evidence.
+
 Progress rows contain user_id, lesson ID and content version. Authorization derives user identity server-side, never from a submitted user ID. Progress increments only at the expected position and version, so replayed/stale steps cannot skip a block; completion is idempotent. A graded block requires at least one saved attempt before traversal, but an incorrect answer may still continue. Correctness and completion remain separate. A changed lesson content version starts afresh when the learner next opens it. There is no XP or inferred mastery.
 
 ## Exercise boundary and evaluation

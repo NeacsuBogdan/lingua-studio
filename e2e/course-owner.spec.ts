@@ -372,6 +372,11 @@ test('owner practises all seven exercise types and retains progress securely', a
     page.getByRole('region', { name: 'New vocabulary' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await expect(
+    page.getByRole('heading', {
+      name: 'Match each verb to its natural everyday collocation.',
+    }),
+  ).toBeVisible();
   await page.goto('/vocabulary');
   await expect(page.getByText('3 items')).toBeVisible();
   await page.getByRole('link', { name: 'decision', exact: true }).click();
