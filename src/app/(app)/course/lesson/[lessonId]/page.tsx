@@ -10,6 +10,7 @@ import { startLessonAction, advanceLessonAction } from './actions';
 import { isExercise, presentExercise } from '@/content/activity-schema';
 import { latestAttempt } from '@/server/exercises/repository';
 import { ExercisePlayer } from '@/components/exercises/exercise-player';
+import { getActivityIntroductions } from '@/server/vocabulary/repository';
 
 export const metadata: Metadata = { title: 'Lesson' };
 
@@ -36,6 +37,14 @@ export default async function LessonPage({
   const { lesson, activities } = view;
   const position = Math.min(lesson.position, activities.length - 1);
   const block = activities[position];
+  const introductions =
+    lesson.state === 'in_progress' && !isExercise(block)
+      ? await getActivityIntroductions(
+          getDb(),
+          block.id,
+          profile.learningLanguage,
+        )
+      : [];
   const initialAttempt =
     lesson.state === 'in_progress' && isExercise(block)
       ? await latestAttempt(getDb(), owner.id, block.id, lesson.contentVersion)
@@ -142,6 +151,30 @@ export default async function LessonPage({
           </div>
           <p className="lesson-instructions">{block.instructions}</p>
           <h2 id="activity-heading">{block.prompt}</h2>
+          {introductions.length > 0 && (
+            <section className="lesson-vocabulary" aria-label="New vocabulary">
+              <h3>New vocabulary</h3>
+              <div className="vocab-grid">
+                {introductions.map((item) => (
+                  <article className="vocab-card" key={item.id}>
+                    <h4>
+                      <Link href={`/vocabulary/${item.id}`}>
+                        {item.displayForm}
+                      </Link>
+                    </h4>
+                    <p className="vocab-meta">
+                      {item.partOfSpeech} · {item.level}
+                    </p>
+                    <p>{item.definition}</p>
+                  </article>
+                ))}
+              </div>
+              <p>
+                These words enter your encountered list when you continue this
+                block.
+              </p>
+            </section>
+          )}
           {isExercise(block) ? (
             <ExercisePlayer
               key={`${block.id}:${lesson.contentVersion}`}

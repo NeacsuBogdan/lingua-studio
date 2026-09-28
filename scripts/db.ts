@@ -6,6 +6,7 @@ import { requireDatabaseUrl } from '../src/lib/env';
 import { databaseTlsOptions } from '../src/lib/database-tls';
 import * as schema from '../src/server/db/schema';
 import { seedEnglishCourse } from '../src/server/course/seed';
+import { seedEnglishVocabulary } from '../src/server/vocabulary/seed';
 import { sql as sqlExpression } from 'drizzle-orm';
 nextEnv.loadEnvConfig(process.cwd());
 async function main() {
@@ -67,7 +68,10 @@ async function main() {
           },
         });
       await seedEnglishCourse(db);
-      console.log('Language reference data and English course seeded.');
+      await seedEnglishVocabulary(db);
+      console.log(
+        'Language reference data, English course and vocabulary seeded.',
+      );
     } else if (command === 'verify') {
       const [summary] = await sql`
         select
@@ -82,6 +86,11 @@ async function main() {
           (select count(*)::integer from lessons x join units u on u.id = x.unit_id join course_levels l on l.id = u.course_level_id where l.course_id = 'english-core') as lessons,
           (select count(*)::integer from lesson_activities a join lessons x on x.id = a.lesson_id join units u on u.id = x.unit_id join course_levels l on l.id = u.course_level_id where l.course_id = 'english-core') as activities,
           (select count(*)::integer from lesson_prerequisites p join lessons x on x.id = p.lesson_id join units u on u.id = x.unit_id join course_levels l on l.id = u.course_level_id where l.course_id = 'english-core') as prerequisites
+          ,(select count(*)::integer from vocabulary_senses where language_code = 'en' and is_published) as vocabulary_senses
+          ,(select count(*)::integer from vocabulary_examples) as vocabulary_examples
+          ,(select count(*)::integer from vocabulary_collocations) as vocabulary_collocations
+          ,(select count(*)::integer from vocabulary_families) as vocabulary_families
+          ,(select count(*)::integer from activity_vocabulary) as vocabulary_links
       `;
       if (
         summary.test_fixtures !== 0 ||
@@ -92,7 +101,12 @@ async function main() {
         summary.activities !== 18 ||
         summary.exercise_types !== 7 ||
         summary.outdated_lessons !== 0 ||
-        summary.prerequisites !== 4
+        summary.prerequisites !== 4 ||
+        summary.vocabulary_senses !== 16 ||
+        summary.vocabulary_examples !== 16 ||
+        summary.vocabulary_collocations !== 4 ||
+        summary.vocabulary_families !== 5 ||
+        summary.vocabulary_links !== 13
       ) {
         throw new Error('Unexpected published course database state');
       }

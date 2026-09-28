@@ -357,12 +357,64 @@ test('owner practises all seven exercise types and retains progress securely', a
   await grade();
   await finish();
 
-  await begin('en-b1-collocations');
+  await page.goto('/vocabulary');
+  await expect(page.getByText('0 items')).toBeVisible();
+  await page.getByRole('button', { name: 'Explore' }).click();
+  await expect(page.getByText('16 items')).toBeVisible();
+  await page.getByLabel('Search').fill('decision');
+  await expect(
+    page.getByRole('link', { name: 'decision', exact: true }),
+  ).toBeVisible();
+  await page.getByLabel('Search').fill('');
+  await page.goto('/course/lesson/en-b1-collocations');
+  await page.getByRole('button', { name: 'Begin lesson' }).click();
+  await expect(
+    page.getByRole('region', { name: 'New vocabulary' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await page.goto('/vocabulary');
+  await expect(page.getByText('3 items')).toBeVisible();
+  await page.getByRole('link', { name: 'decision', exact: true }).click();
+  await expect(page.locator('.subtitle')).toContainText('encountered');
+  await page.getByRole('button', { name: 'Save word' }).click();
+  await expect(
+    page.getByRole('button', { name: 'Remove from saved' }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole('button', { name: 'Remove from saved' }),
+  ).toBeVisible();
+  await page.goto('/vocabulary');
+  await page.getByRole('button', { name: 'Saved' }).click();
+  await expect(
+    page.getByRole('link', { name: 'decision', exact: true }),
+  ).toBeVisible();
+  await page.goto('/course/lesson/en-b1-collocations');
   await inspectExercise('matching');
   await page.getByLabel('make', { exact: true }).selectOption('decision');
   await page.getByLabel('take', { exact: true }).selectOption('break');
   await page.getByLabel('keep', { exact: true }).selectOption('promise');
   await grade();
+  await page.goto('/vocabulary');
+  await expect(
+    page.locator('.vocab-meta').filter({ hasText: 'practising' }).first(),
+  ).toBeVisible();
+  await page.getByLabel('CEFR').selectOption('B1');
+  await page.getByLabel('Tag').selectOption('collocation');
+  await expect(page.getByText('3 items')).toBeVisible();
+  for (const width of [1280, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+  const vocabularyAxe = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .analyze();
+  expect(vocabularyAxe.violations.map((violation) => violation.id)).toEqual([]);
+  await page.goto('/course/lesson/en-b1-collocations');
   await finish();
 
   await begin('en-b1-polite-requests');
@@ -439,6 +491,11 @@ test('owner practises all seven exercise types and retains progress securely', a
   ]);
   await page.goto('/course');
   await expect(page.getByText('5 / 5')).toBeVisible();
+  await page.goto('/vocabulary');
+  await page.getByRole('button', { name: 'Saved' }).click();
+  await expect(
+    page.getByRole('link', { name: 'decision', exact: true }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL('/sign-in');
   expect(errors).toEqual([]);

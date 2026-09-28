@@ -1,6 +1,13 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import type { getDb } from '../db/client';
-import { exerciseAttempts, lessons, lessonProgress } from '../db/schema';
+import {
+  exerciseAttempts,
+  lessons,
+  lessonProgress,
+  activityVocabulary,
+  vocabularyEvidence,
+  userVocabulary,
+} from '../db/schema';
 import { getLessonView } from '../course/repository';
 import { isExercise } from '../../content/activity-schema';
 import {
@@ -129,6 +136,54 @@ export async function submitExercise(
         score: result.score,
       })
       .returning({ id: exerciseAttempts.id });
+    const targets = await tx
+      .select({
+        senseId: activityVocabulary.senseId,
+        targetKey: activityVocabulary.targetKey,
+      })
+      .from(activityVocabulary)
+      .where(
+        and(
+          eq(activityVocabulary.activityId, activity.id),
+          eq(activityVocabulary.role, 'practises'),
+        ),
+      );
+    for (const target of targets) {
+      let correct = result.isCorrect;
+      let score = result.score;
+      if (
+        activity.type === 'matching' &&
+        answer.type === 'matching' &&
+        target.targetKey
+      ) {
+        const expected = activity.payload.correctPairs.find(
+          (pair) => pair.leftId === target.targetKey,
+        );
+        correct = Boolean(
+          expected &&
+          answer.pairs.some(
+            (pair) =>
+              pair.leftId === expected.leftId &&
+              pair.rightId === expected.rightId,
+          ),
+        );
+        score = correct ? 1 : 0;
+      }
+      await tx.insert(vocabularyEvidence).values({
+        attemptId: attempt.id,
+        senseId: target.senseId,
+        userId,
+        isCorrect: correct,
+        score,
+      });
+      await tx
+        .insert(userVocabulary)
+        .values({ userId, senseId: target.senseId, lastSeenAt: new Date() })
+        .onConflictDoUpdate({
+          target: [userVocabulary.userId, userVocabulary.senseId],
+          set: { lastSeenAt: sql`excluded.last_seen_at` },
+        });
+    }
     return { ...result, attemptId: attempt.id };
   });
 }

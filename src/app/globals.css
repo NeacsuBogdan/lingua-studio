@@ -659,6 +659,148 @@ footer {
     grid-template-columns: 1fr;
   }
 }
+
+.vocab-page {
+  max-width: 1100px;
+}
+.vocab-views,
+.vocab-filters,
+.vocab-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.vocab-views {
+  margin: 22px 0;
+}
+.vocab-views button,
+.vocab-save {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 16px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+}
+.vocab-views button[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+.vocab-filters {
+  align-items: end;
+  margin: 18px 0;
+}
+.vocab-filters label {
+  display: grid;
+  gap: 5px;
+  min-width: min(100%, 160px);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.vocab-filters input,
+.vocab-filters select {
+  min-height: 44px;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.vocab-filters input {
+  min-width: min(100%, 220px);
+}
+.vocab-result-count,
+.vocab-meta,
+.vocab-disclaimer,
+.vocab-empty,
+.lesson-vocabulary > p {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.vocab-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 245px), 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+.vocab-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 20px;
+}
+.vocab-card h2,
+.vocab-card h4 {
+  margin: 0 0 10px;
+}
+.vocab-card h2 {
+  font-size: 1.2rem;
+}
+.vocab-card a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.vocab-card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+}
+.vocab-cefr,
+.vocab-tags span {
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--text);
+  padding: 4px 10px;
+  font-size: 0.78rem;
+}
+.vocab-tags {
+  margin-top: 16px;
+}
+.vocab-detail {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+.vocab-detail ul {
+  padding-left: 20px;
+}
+.vocab-detail li {
+  margin: 8px 0;
+}
+.vocab-detail blockquote {
+  border-left: 3px solid var(--accent);
+  margin: 12px 0;
+  padding: 8px 0 8px 14px;
+}
+.vocab-detail blockquote small {
+  display: block;
+  margin-top: 8px;
+}
+.vocab-save {
+  margin-top: 18px;
+}
+.lesson-vocabulary {
+  margin: 24px 0;
+}
+.lesson-vocabulary h3 {
+  font-size: 1.1rem;
+}
+@media (max-width: 400px) {
+  .vocab-filters label,
+  .vocab-filters input,
+  .vocab-filters select {
+    width: 100%;
+  }
+}
 @media (min-width: 1600px) {
   main {
     padding-top: 60px;

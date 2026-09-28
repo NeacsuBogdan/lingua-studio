@@ -15,6 +15,9 @@ export const auth = betterAuth({
       if (level === 'error') console.error('Authentication request failed.');
     },
   },
+  // Better Call otherwise logs raw non-API adapter errors, including OAuth
+  // state/PKCE query parameters. Let the route catch them and respond safely.
+  onAPIError: { throw: true },
   baseURL: process.env.BETTER_AUTH_URL,
   secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(getDb(), {
