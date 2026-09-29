@@ -6,12 +6,14 @@ import {
   Route,
   SlidersHorizontal,
   BookOpen,
+  LibraryBig,
 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { SignOutButton } from './sign-out-button';
 const links = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
   { href: '/course', label: 'Learning path', icon: Route },
+  { href: '/vocabulary', label: 'Vocabulary', icon: LibraryBig },
   { href: '/settings', label: 'Preferences', icon: SlidersHorizontal },
 ];
 export function Navigation({ displayName }: { displayName: string }) {
@@ -32,8 +34,18 @@ export function Navigation({ displayName }: { displayName: string }) {
           <Link
             key={href}
             href={href}
-            className={pathname === href ? 'nav-link active' : 'nav-link'}
-            aria-current={pathname === href ? 'page' : undefined}
+            className={
+              pathname === href ||
+              (href === '/vocabulary' && pathname.startsWith('/vocabulary/'))
+                ? 'nav-link active'
+                : 'nav-link'
+            }
+            aria-current={
+              pathname === href ||
+              (href === '/vocabulary' && pathname.startsWith('/vocabulary/'))
+                ? 'page'
+                : undefined
+            }
           >
             <Icon size={19} />
             {label}

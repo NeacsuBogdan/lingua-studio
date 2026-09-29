@@ -6,6 +6,8 @@ test('protected pages redirect visitors to sign-in', async ({ page }) => {
     '/',
     '/course',
     '/course/lesson/en-b1-present-perfect',
+    '/vocabulary',
+    '/vocabulary/en-decision-noun-1',
     '/settings',
   ]) {
     await page.goto(route);

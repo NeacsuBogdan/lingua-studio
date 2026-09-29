@@ -1,4 +1,4 @@
-import { and, eq, inArray, asc, ne } from 'drizzle-orm';
+import { and, eq, inArray, asc, ne, sql } from 'drizzle-orm';
 import type { getDb } from '../db/client';
 import {
   languages,
@@ -10,6 +10,8 @@ import {
   lessonPrerequisites,
   lessonProgress,
   exerciseAttempts,
+  activityVocabulary,
+  userVocabulary,
 } from '../db/schema';
 import { learningActivitySchema } from '../../content/course-schema';
 
@@ -298,6 +300,24 @@ export async function advanceLesson(
   expectedPosition: number,
   expectedVersion: number,
 ) {
+  return db.transaction((tx) =>
+    advanceLessonInTransaction(
+      tx as unknown as Database,
+      userId,
+      lessonId,
+      expectedPosition,
+      expectedVersion,
+    ),
+  );
+}
+
+async function advanceLessonInTransaction(
+  db: Database,
+  userId: string,
+  lessonId: string,
+  expectedPosition: number,
+  expectedVersion: number,
+) {
   const lesson = await gate(db, userId, lessonId);
   if (lesson.contentVersion !== expectedVersion) throw new CourseError('stale');
   const blocks = await db
@@ -360,5 +380,31 @@ export async function advanceLesson(
     )
     .returning();
   if (!updated) throw new CourseError('stale');
+  const introduced = await db
+    .select({ senseId: activityVocabulary.senseId })
+    .from(activityVocabulary)
+    .where(
+      and(
+        eq(activityVocabulary.activityId, block.id),
+        eq(activityVocabulary.role, 'introduces'),
+      ),
+    );
+  for (const { senseId } of introduced) {
+    await db
+      .insert(userVocabulary)
+      .values({
+        userId,
+        senseId,
+        introducedAt: new Date(),
+        lastSeenAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [userVocabulary.userId, userVocabulary.senseId],
+        set: {
+          introducedAt: sql`coalesce(${userVocabulary.introducedAt}, excluded.introduced_at)`,
+          lastSeenAt: sql`excluded.last_seen_at`,
+        },
+      });
+  }
   return updated;
 }

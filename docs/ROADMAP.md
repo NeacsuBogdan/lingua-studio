@@ -1,6 +1,6 @@
 # Implementation roadmap
 
-Current state: **Phases 0–3 merged into main; Phase 4 under validation** on `feat/phase-4-exercise-engine`. Phase 5 has not started.
+Current state: **Phases 0–4 complete on main** at Phase 4 squash commit `669f46f`; Phase 5 is in progress on `feat/phase-5-vocabulary-system`. Phase 6 has not started.
 
 | Phase | Scope                           | Status      |
 | ----- | ------------------------------- | ----------- |
@@ -8,8 +8,8 @@ Current state: **Phases 0–3 merged into main; Phase 4 under validation** on `f
 | 1     | PROJECT FOUNDATION              | Completed   |
 | 2     | AUTHENTICATION AND PROFILE      | Completed   |
 | 3     | CONTENT AND COURSE ENGINE       | Completed   |
-| 4     | EXERCISE ENGINE                 | In progress |
-| 5     | VOCABULARY SYSTEM               | Planned     |
+| 4     | EXERCISE ENGINE                 | Completed   |
+| 5     | VOCABULARY SYSTEM               | In progress |
 | 6     | SPACED REPETITION               | Planned     |
 | 7     | MISTAKE ENGINE                  | Planned     |
 | 8     | DAILY LEARNING                  | Planned     |
@@ -90,7 +90,23 @@ Historical Phase 3 runtime check (2026-09-25): a fresh direct HTTP development s
 - [x] Migration/seed applied and safely repeated in Neon; existing owner data preserved
 - [x] Authenticated production E2E exercise journey, Axe and responsive/keyboard checks on isolated PostgreSQL 17
 - [x] Final lint, typecheck, format, 66 tests, clean migration generation, build and audit
-- [ ] Real owner GitHub login and manual exercise/retry/completion/persistence UX validation
+- [x] Real owner GitHub login and manual exercise/retry/completion/persistence UX validation
 - [x] GitHub Actions CI passed on the implementation revision; require green CI on every later revision
 
-Phase 4 is not complete. [Draft PR #3](https://github.com/NeacsuBogdan/lingua-studio/pull/3) targets main; the manual/live owner gate remains open. Phase 5 has not started.
+Phase 4 passed CI and owner manual validation; [PR #3](https://github.com/NeacsuBogdan/lingua-studio/pull/3) was squash-merged. Sentence-reorder visual polish is deferred and does not block Phase 5. Intermittent development HMR can leave React unhydrated; use a production build for final interaction checks when needed.
+
+## Phase 5 acceptance
+
+- [x] Relational sense catalog, curated definitions/examples/tags/CEFR, families and collocations implemented
+- [x] Explicit lesson/activity vocabulary roles without changing lesson version 2
+- [x] Transactional introductions and trusted per-attempt practice evidence implemented
+- [x] Per-user saved vocabulary and deterministic evidence-derived practice status implemented
+- [x] Protected vocabulary browser, detail and lesson introduction UI implemented
+- [x] Focused migration/domain/security tests and authenticated E2E pass
+- [x] Local PostgreSQL migration/seed repeatability and fixture cleanup pass
+- [x] Neon development migration/seed and existing-data preservation verified
+- [x] Lint, typecheck, format, 72 tests, 13 E2E, build, migration check and online audit pass
+- [ ] Real owner manual desktop/mobile, light/dark, keyboard, OAuth and persistence validation pass
+- [x] GitHub CI passed on the implementation revision; require green CI on every later revision
+
+Phase 5 remains in progress pending real-owner manual UX validation. [Draft PR #4](https://github.com/NeacsuBogdan/lingua-studio/pull/4) targets main; it has not been merged. Phase 6 has not started.

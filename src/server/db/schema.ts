@@ -353,3 +353,161 @@ export const exerciseAttempts = pgTable(
     ),
   ],
 );
+
+// Editorial senses have stable identities independent of spelling or display form.
+export const vocabularySenses = pgTable(
+  'vocabulary_senses',
+  {
+    id: text('id').primaryKey(),
+    languageCode: text('language_code')
+      .notNull()
+      .references(() => languages.code),
+    lemma: text('lemma').notNull(),
+    displayForm: text('display_form').notNull(),
+    partOfSpeech: text('part_of_speech').notNull(),
+    level: cefr('level').notNull(),
+    definition: text('definition').notNull(),
+    notes: text('notes'),
+    isPublished: boolean('is_published').notNull().default(true),
+  },
+  (t) => [
+    index('vocabulary_senses_language_level_idx').on(t.languageCode, t.level),
+    check(
+      'vocabulary_senses_pos_allowed',
+      sql`${t.partOfSpeech} in ('noun','verb','adjective','adverb','phrase')`,
+    ),
+  ],
+);
+export const vocabularyExamples = pgTable('vocabulary_examples', {
+  id: text('id').primaryKey(),
+  senseId: text('sense_id')
+    .notNull()
+    .references(() => vocabularySenses.id),
+  sentence: text('sentence').notNull(),
+  note: text('note'),
+});
+export const vocabularyTags = pgTable('vocabulary_tags', {
+  id: text('id').primaryKey(),
+  label: text('label').notNull(),
+});
+export const vocabularySenseTags = pgTable(
+  'vocabulary_sense_tags',
+  {
+    senseId: text('sense_id')
+      .notNull()
+      .references(() => vocabularySenses.id),
+    tagId: text('tag_id')
+      .notNull()
+      .references(() => vocabularyTags.id),
+  },
+  (t) => [
+    primaryKey({ columns: [t.senseId, t.tagId] }),
+    index('vocabulary_sense_tags_tag_idx').on(t.tagId),
+  ],
+);
+export const vocabularyFamilies = pgTable(
+  'vocabulary_families',
+  {
+    senseId: text('sense_id')
+      .notNull()
+      .references(() => vocabularySenses.id),
+    relatedSenseId: text('related_sense_id')
+      .notNull()
+      .references(() => vocabularySenses.id),
+  },
+  (t) => [
+    primaryKey({ columns: [t.senseId, t.relatedSenseId] }),
+    check(
+      'vocabulary_family_not_self',
+      sql`${t.senseId} <> ${t.relatedSenseId}`,
+    ),
+  ],
+);
+export const vocabularyCollocations = pgTable('vocabulary_collocations', {
+  id: text('id').primaryKey(),
+  phrase: text('phrase').notNull(),
+  note: text('note'),
+  example: text('example').notNull(),
+});
+export const vocabularyCollocationSenses = pgTable(
+  'vocabulary_collocation_senses',
+  {
+    collocationId: text('collocation_id')
+      .notNull()
+      .references(() => vocabularyCollocations.id),
+    senseId: text('sense_id')
+      .notNull()
+      .references(() => vocabularySenses.id),
+  },
+  (t) => [primaryKey({ columns: [t.collocationId, t.senseId] })],
+);
+export const activityVocabulary = pgTable(
+  'activity_vocabulary',
+  {
+    activityId: text('activity_id')
+      .notNull()
+      .references(() => lessonActivities.id),
+    senseId: text('sense_id')
+      .notNull()
+      .references(() => vocabularySenses.id),
+    role: text('role').notNull(),
+    targetKey: text('target_key'),
+  },
+  (t) => [
+    primaryKey({ columns: [t.activityId, t.senseId] }),
+    index('activity_vocabulary_sense_idx').on(t.senseId),
+    check(
+      'activity_vocabulary_role_allowed',
+      sql`${t.role} in ('introduces','practises','context')`,
+    ),
+  ],
+);
+export const userVocabulary = pgTable(
+  'user_vocabulary',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    senseId: text('sense_id')
+      .notNull()
+      .references(() => vocabularySenses.id),
+    introducedAt: timestamp('introduced_at', { withTimezone: true }),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
+    savedAt: timestamp('saved_at', { withTimezone: true }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.senseId] }),
+    index('user_vocabulary_saved_idx').on(t.userId, t.savedAt),
+  ],
+);
+export const vocabularyEvidence = pgTable(
+  'vocabulary_evidence',
+  {
+    attemptId: uuid('attempt_id')
+      .notNull()
+      .references(() => exerciseAttempts.id, { onDelete: 'cascade' }),
+    senseId: text('sense_id')
+      .notNull()
+      .references(() => vocabularySenses.id),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    isCorrect: boolean('is_correct').notNull(),
+    score: real('score').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.attemptId, t.senseId] }),
+    index('vocabulary_evidence_user_sense_idx').on(
+      t.userId,
+      t.senseId,
+      t.createdAt,
+    ),
+    check(
+      'vocabulary_evidence_score_range',
+      sql`${t.score} >= 0 and ${t.score} <= 1`,
+    ),
+  ],
+);
