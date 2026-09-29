@@ -2,7 +2,7 @@
 
 ## Current state
 
-Phases 0–5 are complete on `main`; Phase 5 passed CI and real-owner vocabulary validation, then [PR #4](https://github.com/NeacsuBogdan/lingua-studio/pull/4) was squash-merged at `6ecb30b9d7d60fd555531ad7794da995caf74006`. Current branch: `feat/phase-6-spaced-repetition`. Phase 6 is implemented and its Neon development migration/backfill are verified, but it is **not complete**: draft PR/CI and real-owner review UX remain pending. The intermittent `next dev` HMR failure can leave React unhydrated; use `next build` and `next start` for final interaction checks if needed.
+Phases 0–5 are complete on `main`; Phase 5 passed CI and real-owner vocabulary validation, then [PR #4](https://github.com/NeacsuBogdan/lingua-studio/pull/4) was squash-merged at `6ecb30b9d7d60fd555531ad7794da995caf74006`. Current branch: `feat/phase-6-spaced-repetition`. Phase 6 is implemented, its Neon development migration/backfill are verified, and [draft PR #5](https://github.com/NeacsuBogdan/lingua-studio/pull/5) passed [CI run #10](https://github.com/NeacsuBogdan/lingua-studio/actions/runs/36563220546). It is **not complete**: real-owner review UX remains pending. The intermittent `next dev` HMR failure can leave React unhydrated; use `next build` and `next start` for final interaction checks if needed.
 
 ## Phase 4 historical implementation record
 
@@ -59,4 +59,4 @@ Phases 0–5 are complete on `main`; Phase 5 passed CI and real-owner vocabulary
 
 ## Next session
 
-Continue Phase 6 on `feat/phase-6-spaced-repetition` by pushing the validated branch, creating a draft PR and checking CI. Real-owner review UX remains the final acceptance gate. Do not merge or start Phase 7. Do not delete published content or owner data. `.env.local` stays ignored and must never be committed.
+Continue Phase 6 on `feat/phase-6-spaced-repetition` with real-owner review UX validation. Draft PR #5 is open and CI passed; keep it in draft until the remaining acceptance gate passes. Do not merge or start Phase 7. Do not delete published content or owner data. `.env.local` stays ignored and must never be committed.
