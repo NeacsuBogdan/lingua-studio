@@ -7,11 +7,21 @@ import { databaseTlsOptions } from '../src/lib/database-tls';
 import * as schema from '../src/server/db/schema';
 import { seedEnglishCourse } from '../src/server/course/seed';
 import { seedEnglishVocabulary } from '../src/server/vocabulary/seed';
+import { backfillEligibleCards } from '../src/server/review/repository';
 import { sql as sqlExpression } from 'drizzle-orm';
 nextEnv.loadEnvConfig(process.cwd());
 async function main() {
   const command = process.argv[2];
-  if (!['check', 'inspect', 'migrate', 'seed', 'verify'].includes(command)) {
+  if (
+    ![
+      'check',
+      'inspect',
+      'migrate',
+      'seed',
+      'review-backfill',
+      'verify',
+    ].includes(command)
+  ) {
     throw new Error('Unknown database command.');
   }
   const url = requireDatabaseUrl();
@@ -72,6 +82,9 @@ async function main() {
       console.log(
         'Language reference data, English course and vocabulary seeded.',
       );
+    } else if (command === 'review-backfill') {
+      const result = await backfillEligibleCards(db, new Date());
+      console.log('Eligible review cards backfilled (counts only):', result);
     } else if (command === 'verify') {
       const [summary] = await sql`
         select
@@ -91,6 +104,9 @@ async function main() {
           ,(select count(*)::integer from vocabulary_collocations) as vocabulary_collocations
           ,(select count(*)::integer from vocabulary_families) as vocabulary_families
           ,(select count(*)::integer from activity_vocabulary) as vocabulary_links
+          ,(select count(*)::integer from review_cards) as review_cards
+          ,(select count(*)::integer from review_history) as review_history
+          ,(select count(*)::integer from (select user_id, sense_id from user_vocabulary where introduced_at is not null union select user_id, sense_id from vocabulary_evidence) eligible left join review_cards c on c.user_id = eligible.user_id and c.sense_id = eligible.sense_id and c.kind = 'recognition' where c.id is null) as missing_review_cards
       `;
       if (
         summary.test_fixtures !== 0 ||
@@ -106,7 +122,8 @@ async function main() {
         summary.vocabulary_examples !== 16 ||
         summary.vocabulary_collocations !== 4 ||
         summary.vocabulary_families !== 5 ||
-        summary.vocabulary_links !== 13
+        summary.vocabulary_links !== 13 ||
+        summary.missing_review_cards !== 0
       ) {
         throw new Error('Unexpected published course database state');
       }

@@ -6,6 +6,7 @@ import { getOrCreateProfile } from '@/server/profile/repository';
 import { getDb } from '@/server/db/client';
 import { getVocabularyDetail } from '@/server/vocabulary/repository';
 import { SaveButton } from '@/components/vocabulary/save-button';
+import { getReviewCardSummary } from '@/server/review/repository';
 
 export const metadata: Metadata = { title: 'Vocabulary detail' };
 export default async function VocabularyDetailPage({
@@ -23,6 +24,12 @@ export default async function VocabularyDetailPage({
     vocabularyId,
   );
   if (!item) notFound();
+  const review = await getReviewCardSummary(
+    getDb(),
+    owner.id,
+    item.id,
+    new Date(),
+  );
   return (
     <div className="vocab-page">
       <Link className="text-link" href="/vocabulary">
@@ -57,6 +64,20 @@ export default async function VocabularyDetailPage({
             </blockquote>
           ))}
         </section>
+        {review && (
+          <section className="vocab-card">
+            <h2>Review</h2>
+            <p>
+              {review.state} · {review.reviewCount} reviews
+            </p>
+            <p>
+              {review.dueNow
+                ? 'Due now'
+                : `Next review: ${review.due.toLocaleString('en-GB', { timeZone: profile.timezone })}`}
+            </p>
+            <Link href="/review">Open review</Link>
+          </section>
+        )}
         {item.collocations.length > 0 && (
           <section className="vocab-card">
             <h2>Collocations</h2>

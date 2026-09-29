@@ -17,6 +17,7 @@ import {
   type ExerciseAnswer,
 } from '../../lib/exercise-answer';
 import { evaluateExercise } from './evaluate';
+import { ensureReviewCard } from '../review/repository';
 
 type Database = ReturnType<typeof getDb>;
 export class AttemptError extends Error {
@@ -183,6 +184,7 @@ export async function submitExercise(
           target: [userVocabulary.userId, userVocabulary.senseId],
           set: { lastSeenAt: sql`excluded.last_seen_at` },
         });
+      await ensureReviewCard(database, userId, target.senseId, new Date());
     }
     return { ...result, attemptId: attempt.id };
   });

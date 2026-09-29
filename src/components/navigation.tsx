@@ -7,6 +7,7 @@ import {
   SlidersHorizontal,
   BookOpen,
   LibraryBig,
+  RotateCcw,
 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { SignOutButton } from './sign-out-button';
@@ -14,6 +15,7 @@ const links = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
   { href: '/course', label: 'Learning path', icon: Route },
   { href: '/vocabulary', label: 'Vocabulary', icon: LibraryBig },
+  { href: '/review', label: 'Review', icon: RotateCcw },
   { href: '/settings', label: 'Preferences', icon: SlidersHorizontal },
 ];
 export function Navigation({ displayName }: { displayName: string }) {
@@ -36,13 +38,15 @@ export function Navigation({ displayName }: { displayName: string }) {
             href={href}
             className={
               pathname === href ||
-              (href === '/vocabulary' && pathname.startsWith('/vocabulary/'))
+              ((href === '/vocabulary' || href === '/review') &&
+                pathname.startsWith(href + '/'))
                 ? 'nav-link active'
                 : 'nav-link'
             }
             aria-current={
               pathname === href ||
-              (href === '/vocabulary' && pathname.startsWith('/vocabulary/'))
+              ((href === '/vocabulary' || href === '/review') &&
+                pathname.startsWith(href + '/'))
                 ? 'page'
                 : undefined
             }
