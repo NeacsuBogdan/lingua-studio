@@ -407,6 +407,7 @@ test('owner practises all seven exercise types and retains progress securely', a
   await expect(page.getByRole('heading', { name: 'Meaning' })).toBeVisible();
   for (const theme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: theme });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
     for (const width of [1280, 390, 320]) {
       await page.setViewportSize({ width, height: 900 });
       expect(
@@ -519,6 +520,7 @@ test('owner practises all seven exercise types and retains progress securely', a
   await expect(page.getByRole('heading', { name: '3 reviews' })).toBeVisible();
   for (const theme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: theme });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
     for (const width of [1280, 390, 320]) {
       await page.setViewportSize({ width, height: 900 });
       expect(
