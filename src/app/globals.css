@@ -1104,15 +1104,6 @@ footer {
     gap: 2px;
   }
 }
-@media (prefers-reduced-motion: no-preference) {
-  a,
-  button {
-    transition:
-      background-color 0.15s ease,
-      color 0.15s ease;
-  }
-}
-
 .course-overview {
   display: flex;
   justify-content: space-between;
