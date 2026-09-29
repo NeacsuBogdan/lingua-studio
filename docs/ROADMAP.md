@@ -1,6 +1,6 @@
 # Implementation roadmap
 
-Current state: **Phases 0–5 complete on main** at Phase 5 squash commit `6ecb30b9d7d60fd555531ad7794da995caf74006`. Phase 6 is in local development on `feat/phase-6-spaced-repetition`; Neon migration, push/PR, CI and real-owner validation are pending separate gates.
+Current state: **Phases 0–5 complete on main** at Phase 5 squash commit `6ecb30b9d7d60fd555531ad7794da995caf74006`. Phase 6 is implemented on `feat/phase-6-spaced-repetition`; Neon development migration/backfill and preservation checks passed. Draft PR/CI and real-owner validation remain open.
 
 | Phase | Scope                           | Status      |
 | ----- | ------------------------------- | ----------- |
@@ -122,7 +122,7 @@ Phase 5 passed CI and real-owner manual validation. [PR #4](https://github.com/N
 - [x] Review statistics, vocabulary detail status and Overview due count read persisted state
 - [x] Owner/language isolation and strict browser input boundaries covered by integration/E2E tests
 - [x] Final local lint, typecheck, format, 79 tests, migration generation, PostgreSQL checks, 15 authenticated E2E, build and audit pass
-- [ ] Neon development pre-inspection, separately authorized `0006` migration/backfill, and Phase 0–5 preservation verification
+- [x] Neon development pre-inspection, authorized `0006` migration/backfill, repeatability and Phase 0–5 preservation verification
 - [ ] Push, draft PR and green GitHub CI when authorized
 - [ ] Real-owner manual desktop/mobile, light/dark, keyboard, OAuth and persistence validation
 
