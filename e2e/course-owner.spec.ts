@@ -532,7 +532,18 @@ test('owner practises all seven exercise types and retains progress securely', a
     const reviewAxe = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .analyze();
-    expect(reviewAxe.violations.map((violation) => violation.id)).toEqual([]);
+    expect(
+      reviewAxe.violations.map((violation) => violation.id),
+      JSON.stringify({
+        theme,
+        nodes: reviewAxe.violations.flatMap((violation) =>
+          violation.nodes.map((node) => ({
+            target: node.target,
+            failureSummary: node.failureSummary,
+          })),
+        ),
+      }),
+    ).toEqual([]);
   }
   await page.goto('/');
   await expect(page.getByText('0 reviews due')).toBeVisible();
