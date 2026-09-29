@@ -14,6 +14,7 @@ import {
   userVocabulary,
 } from '../db/schema';
 import { learningActivitySchema } from '../../content/course-schema';
+import { ensureReviewCard } from '../review/repository';
 
 type Database = ReturnType<typeof getDb>;
 type LessonRow = typeof lessons.$inferSelect;
@@ -390,13 +391,14 @@ async function advanceLessonInTransaction(
       ),
     );
   for (const { senseId } of introduced) {
+    const now = new Date();
     await db
       .insert(userVocabulary)
       .values({
         userId,
         senseId,
-        introducedAt: new Date(),
-        lastSeenAt: new Date(),
+        introducedAt: now,
+        lastSeenAt: now,
       })
       .onConflictDoUpdate({
         target: [userVocabulary.userId, userVocabulary.senseId],
@@ -405,6 +407,7 @@ async function advanceLessonInTransaction(
           lastSeenAt: sql`excluded.last_seen_at`,
         },
       });
+    await ensureReviewCard(db, userId, senseId, now);
   }
   return updated;
 }

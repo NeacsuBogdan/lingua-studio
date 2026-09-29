@@ -43,6 +43,13 @@
       "when": 1790631292389,
       "tag": "0005_bumpy_gunslinger",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790680259524,
+      "tag": "0006_sour_salo",
+      "breakpoints": true
     }
   ]
 }

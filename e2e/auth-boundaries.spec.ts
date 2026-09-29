@@ -8,6 +8,8 @@ test('protected pages redirect visitors to sign-in', async ({ page }) => {
     '/course/lesson/en-b1-present-perfect',
     '/vocabulary',
     '/vocabulary/en-decision-noun-1',
+    '/review',
+    '/review/session/00000000-0000-4000-8000-000000000000',
     '/settings',
   ]) {
     await page.goto(route);
@@ -19,6 +21,19 @@ test('protected pages redirect visitors to sign-in', async ({ page }) => {
       page.getByRole('heading', { name: 'Your English learning path.' }),
     ).toHaveCount(0);
   }
+});
+
+test('anonymous review APIs are denied', async ({ request }) => {
+  expect(
+    (
+      await request.get(
+        '/api/review/answer?sessionId=00000000-0000-4000-8000-000000000000&itemId=00000000-0000-4000-8000-000000000000',
+      )
+    ).status(),
+  ).toBe(401);
+  expect((await request.post('/api/review/rate', { data: {} })).status()).toBe(
+    401,
+  );
 });
 
 test('session endpoint does not create a session for a visitor', async ({

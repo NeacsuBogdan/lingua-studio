@@ -17,7 +17,8 @@
     "db:seed": "tsx scripts/db.ts seed",
     "db:check": "tsx scripts/db.ts check",
     "db:inspect": "tsx scripts/db.ts inspect",
-    "db:verify": "tsx scripts/db.ts verify"
+    "db:verify": "tsx scripts/db.ts verify",
+    "db:review-backfill": "tsx scripts/db.ts review-backfill"
   },
   "keywords": [],
   "author": "",
@@ -36,6 +37,7 @@
     "react-dom": "^19.3.0",
     "server-only": "^0.0.1",
     "tailwind-merge": "^3.7.0",
+    "ts-fsrs": "5.4.2",
     "zod": "^4.6.5"
   },
   "devDependencies": {

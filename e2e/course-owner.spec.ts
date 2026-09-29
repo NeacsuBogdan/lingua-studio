@@ -394,6 +394,159 @@ test('owner practises all seven exercise types and retains progress securely', a
   await expect(
     page.getByRole('link', { name: 'decision', exact: true }),
   ).toBeVisible();
+  await page.goto('/review');
+  await expect(
+    page.getByRole('heading', { name: '3 reviews due' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Start review' }).click();
+  await expect(page.locator('.review-card .eyebrow')).toContainText(
+    'CARD 1 OF 3',
+  );
+  const reviewSessionUrl = page.url();
+  await page.getByRole('button', { name: 'Show answer' }).click();
+  await expect(page.getByRole('heading', { name: 'Meaning' })).toBeVisible();
+  for (const theme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: theme });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+    for (const width of [1280, 390, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      if (width === 320 || (width === 1280 && theme === 'light'))
+        await page.screenshot({
+          path: testInfo.outputPath(`review-card-${width}-${theme}.png`),
+          fullPage: true,
+        });
+    }
+    const cardAxe = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze();
+    expect(cardAxe.violations.map((violation) => violation.id)).toEqual([]);
+  }
+  const reviewRequest = page.waitForRequest(
+    (request) =>
+      request.method() === 'POST' &&
+      new URL(request.url()).pathname === '/api/review/rate',
+  );
+  await page.keyboard.press('1');
+  const firstReviewPayload = (await reviewRequest).postDataJSON();
+  await expect(page.locator('.review-card .eyebrow')).toContainText(
+    'CARD 2 OF 3',
+  );
+  expect(
+    (
+      await api.post('/api/review/rate', {
+        headers,
+        data: { ...firstReviewPayload, due: new Date().toISOString() },
+      })
+    ).status(),
+  ).toBe(400);
+  expect(
+    (
+      await api.post('/api/review/rate', {
+        headers: { Origin: 'https://untrusted.example' },
+        data: firstReviewPayload,
+      })
+    ).status(),
+  ).toBe(403);
+  expect(
+    (
+      await api.post('/api/review/rate', { headers, data: firstReviewPayload })
+    ).status(),
+  ).toBe(200);
+  expect(
+    await drizzle(sql!, { schema })
+      .select()
+      .from(schema.reviewHistory)
+      .where(eq(schema.reviewHistory.userId, userId!)),
+  ).toHaveLength(1);
+  await page.reload();
+  await expect(page).toHaveURL(reviewSessionUrl);
+  await expect(page.locator('.review-card .eyebrow')).toContainText(
+    'CARD 2 OF 3',
+  );
+  await page.getByRole('button', { name: 'Show answer' }).click();
+  const sessionId = reviewSessionUrl.split('/').at(-1)!;
+  const [secondItem] = await drizzle(sql!, { schema })
+    .select()
+    .from(schema.reviewSessionItems)
+    .where(eq(schema.reviewSessionItems.sessionId, sessionId))
+    .orderBy(schema.reviewSessionItems.position)
+    .offset(1)
+    .limit(1);
+  const secondPayload = {
+    sessionId,
+    itemId: secondItem.id,
+    cardId: secondItem.cardId,
+    submissionId: randomUUID(),
+    rating: 'Good',
+  };
+  const concurrent = await Promise.all([
+    api.post('/api/review/rate', { headers, data: secondPayload }),
+    api.post('/api/review/rate', { headers, data: secondPayload }),
+  ]);
+  expect(concurrent.map((response) => response.status())).toEqual([200, 200]);
+  expect(
+    (await Promise.all(concurrent.map((response) => response.json())))
+      .map((result) => result.replay)
+      .sort(),
+  ).toEqual([false, true]);
+  expect(
+    await drizzle(sql!, { schema })
+      .select()
+      .from(schema.reviewHistory)
+      .where(eq(schema.reviewHistory.userId, userId!)),
+  ).toHaveLength(2);
+  await page.reload();
+  await expect(page.locator('.review-card .eyebrow')).toContainText(
+    'CARD 3 OF 3',
+  );
+  await page.getByRole('button', { name: 'Show answer' }).click();
+  await page.getByRole('button', { name: /Easy/ }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Session summary' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Finish session' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Review complete.' }),
+  ).toBeVisible();
+  await page.goto('/review');
+  await expect(
+    page.getByRole('heading', { name: '0 reviews due' }),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: '3 reviews' })).toBeVisible();
+  for (const theme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: theme });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+    for (const width of [1280, 390, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+    const reviewAxe = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze();
+    expect(
+      reviewAxe.violations.map((violation) => violation.id),
+      JSON.stringify({
+        theme,
+        nodes: reviewAxe.violations.flatMap((violation) =>
+          violation.nodes.map((node) => ({
+            target: node.target,
+            failureSummary: node.failureSummary,
+          })),
+        ),
+      }),
+    ).toEqual([]);
+  }
+  await page.goto('/');
+  await expect(page.getByText('0 reviews due')).toBeVisible();
   await page.goto('/course/lesson/en-b1-collocations');
   await inspectExercise('matching');
   await page.getByLabel('make', { exact: true }).selectOption('decision');
@@ -501,6 +654,8 @@ test('owner practises all seven exercise types and retains progress securely', a
   await expect(
     page.getByRole('link', { name: 'decision', exact: true }),
   ).toBeVisible();
+  await page.goto('/review');
+  await expect(page.getByRole('heading', { name: '3 reviews' })).toBeVisible();
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL('/sign-in');
   expect(errors).toEqual([]);

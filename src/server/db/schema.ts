@@ -11,6 +11,7 @@ import {
   jsonb,
   primaryKey,
   real,
+  doublePrecision,
   index,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
@@ -509,5 +510,157 @@ export const vocabularyEvidence = pgTable(
       'vocabulary_evidence_score_range',
       sql`${t.score} >= 0 and ${t.score} <= 1`,
     ),
+  ],
+);
+
+// Review state belongs to one learner and one stable editorial sense.
+export const reviewCards = pgTable(
+  'review_cards',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    senseId: text('sense_id')
+      .notNull()
+      .references(() => vocabularySenses.id),
+    kind: text('kind').notNull().default('recognition'),
+    due: timestamp('due', { withTimezone: true }).notNull(),
+    stability: doublePrecision('stability').notNull(),
+    difficulty: doublePrecision('difficulty').notNull(),
+    elapsedDays: doublePrecision('elapsed_days').notNull(),
+    scheduledDays: doublePrecision('scheduled_days').notNull(),
+    learningSteps: integer('learning_steps').notNull(),
+    reps: integer('reps').notNull(),
+    lapses: integer('lapses').notNull(),
+    state: integer('state').notNull(),
+    lastReview: timestamp('last_review', { withTimezone: true }),
+    revision: integer('revision').notNull().default(0),
+    schedulerVersion: text('scheduler_version').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('review_cards_user_sense_kind_unique').on(
+      t.userId,
+      t.senseId,
+      t.kind,
+    ),
+    index('review_cards_user_due_idx').on(t.userId, t.due),
+    check('review_cards_kind_allowed', sql`${t.kind} = 'recognition'`),
+    check('review_cards_state_allowed', sql`${t.state} between 0 and 3`),
+    check(
+      'review_cards_counts_nonnegative',
+      sql`${t.revision} >= 0 and ${t.reps} >= 0 and ${t.lapses} >= 0 and ${t.learningSteps} >= 0`,
+    ),
+  ],
+);
+
+export const reviewSessions = pgTable(
+  'review_sessions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    languageCode: text('language_code')
+      .notNull()
+      .references(() => languages.code),
+    status: text('status').notNull().default('active'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+  },
+  (t) => [
+    index('review_sessions_user_status_idx').on(t.userId, t.status),
+    uniqueIndex('review_sessions_one_active_per_user')
+      .on(t.userId)
+      .where(sql`${t.status} = 'active'`),
+    check(
+      'review_sessions_status_allowed',
+      sql`${t.status} in ('active','completed')`,
+    ),
+    check(
+      'review_sessions_completion_consistent',
+      sql`(${t.status} = 'active' and ${t.completedAt} is null) or (${t.status} = 'completed' and ${t.completedAt} is not null)`,
+    ),
+  ],
+);
+
+export const reviewSessionItems = pgTable(
+  'review_session_items',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    sessionId: uuid('session_id')
+      .notNull()
+      .references(() => reviewSessions.id, { onDelete: 'cascade' }),
+    cardId: uuid('card_id')
+      .notNull()
+      .references(() => reviewCards.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    status: text('status').notNull().default('pending'),
+    expectedRevision: integer('expected_revision').notNull(),
+  },
+  (t) => [
+    uniqueIndex('review_session_items_position_unique').on(
+      t.sessionId,
+      t.position,
+    ),
+    uniqueIndex('review_session_items_card_unique').on(t.sessionId, t.cardId),
+    check('review_session_items_position_positive', sql`${t.position} > 0`),
+    check(
+      'review_session_items_status_allowed',
+      sql`${t.status} in ('pending','reviewed','stale')`,
+    ),
+  ],
+);
+
+export const reviewHistory = pgTable(
+  'review_history',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    cardId: uuid('card_id')
+      .notNull()
+      .references(() => reviewCards.id, { onDelete: 'cascade' }),
+    senseId: text('sense_id')
+      .notNull()
+      .references(() => vocabularySenses.id),
+    sessionId: uuid('session_id')
+      .notNull()
+      .references(() => reviewSessions.id, { onDelete: 'cascade' }),
+    itemId: uuid('item_id')
+      .notNull()
+      .references(() => reviewSessionItems.id, { onDelete: 'cascade' }),
+    submissionId: uuid('submission_id').notNull(),
+    rating: integer('rating').notNull(),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }).notNull(),
+    beforeDue: timestamp('before_due', { withTimezone: true }).notNull(),
+    afterDue: timestamp('after_due', { withTimezone: true }).notNull(),
+    beforeState: integer('before_state').notNull(),
+    afterState: integer('after_state').notNull(),
+    beforeStability: doublePrecision('before_stability').notNull(),
+    afterStability: doublePrecision('after_stability').notNull(),
+    beforeDifficulty: doublePrecision('before_difficulty').notNull(),
+    afterDifficulty: doublePrecision('after_difficulty').notNull(),
+    scheduledDays: doublePrecision('scheduled_days').notNull(),
+    schedulerVersion: text('scheduler_version').notNull(),
+  },
+  (t) => [
+    uniqueIndex('review_history_user_submission_unique').on(
+      t.userId,
+      t.submissionId,
+    ),
+    uniqueIndex('review_history_item_unique').on(t.itemId),
+    index('review_history_user_reviewed_idx').on(t.userId, t.reviewedAt),
+    index('review_history_card_reviewed_idx').on(t.cardId, t.reviewedAt),
+    check('review_history_rating_allowed', sql`${t.rating} between 1 and 4`),
   ],
 );

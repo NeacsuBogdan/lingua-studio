@@ -79,6 +79,9 @@ jobs:
       - name: Seed CI database
         run: npm run db:seed
 
+      - name: Backfill eligible review cards
+        run: npm run db:review-backfill
+
       - name: Verify seeded catalog
         run: npm run db:verify
 

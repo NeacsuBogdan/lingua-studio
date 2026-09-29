@@ -13,6 +13,7 @@ import { getOrCreateProfile } from '@/server/profile/repository';
 import { languageLabels } from '@/lib/language-labels';
 import { getDb } from '@/server/db/client';
 import { getCourseMap } from '@/server/course/repository';
+import { getDueCount } from '@/server/review/repository';
 export default async function Home() {
   const owner = await requireOwner();
   const profile = await getOrCreateProfile(owner.id);
@@ -21,6 +22,12 @@ export default async function Home() {
     getDb(),
     owner.id,
     profile.learningLanguage,
+  );
+  const dueCount = await getDueCount(
+    getDb(),
+    owner.id,
+    profile.learningLanguage,
+    new Date(),
   );
   return (
     <>
@@ -126,11 +133,13 @@ export default async function Home() {
           <span className="metric-icon">
             <BookOpen size={19} />
           </span>
-          <p className="metric-label">Words made yours</p>
+          <p className="metric-label">Ready to review</p>
           <h3>
-            — <span>not tracked yet</span>
+            {dueCount} <span>reviews due</span>
           </h3>
-          <p>Vocabulary grows through practice.</p>
+          <p>
+            <Link href="/review">Open your review queue</Link>
+          </p>
         </Card>
       </div>
       <Card className="foundation-note">

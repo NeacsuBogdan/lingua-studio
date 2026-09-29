@@ -1,6 +1,6 @@
 # Implementation roadmap
 
-Current state: **Phases 0–4 complete on main** at Phase 4 squash commit `669f46f`; Phase 5 is in progress on `feat/phase-5-vocabulary-system`. Phase 6 has not started.
+Current state: **Phases 0–5 complete on main** at Phase 5 squash commit `6ecb30b9d7d60fd555531ad7794da995caf74006`. Phase 6 is implemented on `feat/phase-6-spaced-repetition`; Neon development migration/backfill and preservation checks passed. [Draft PR #5](https://github.com/NeacsuBogdan/lingua-studio/pull/5) passed CI; real-owner validation remains open.
 
 | Phase | Scope                           | Status      |
 | ----- | ------------------------------- | ----------- |
@@ -9,8 +9,8 @@ Current state: **Phases 0–4 complete on main** at Phase 4 squash commit `669f4
 | 2     | AUTHENTICATION AND PROFILE      | Completed   |
 | 3     | CONTENT AND COURSE ENGINE       | Completed   |
 | 4     | EXERCISE ENGINE                 | Completed   |
-| 5     | VOCABULARY SYSTEM               | In progress |
-| 6     | SPACED REPETITION               | Planned     |
+| 5     | VOCABULARY SYSTEM               | Completed   |
+| 6     | SPACED REPETITION               | In progress |
 | 7     | MISTAKE ENGINE                  | Planned     |
 | 8     | DAILY LEARNING                  | Planned     |
 | 9     | PLACEMENT TEST                  | Planned     |
@@ -106,7 +106,24 @@ Phase 4 passed CI and owner manual validation; [PR #3](https://github.com/Neacsu
 - [x] Local PostgreSQL migration/seed repeatability and fixture cleanup pass
 - [x] Neon development migration/seed and existing-data preservation verified
 - [x] Lint, typecheck, format, 72 tests, 13 E2E, build, migration check and online audit pass
-- [ ] Real owner manual desktop/mobile, light/dark, keyboard, OAuth and persistence validation pass
+- [x] Real owner manual vocabulary navigation, save/unsave and persistence validation pass
 - [x] GitHub CI passed on the implementation revision; require green CI on every later revision
 
-Phase 5 remains in progress pending real-owner manual UX validation. [Draft PR #4](https://github.com/NeacsuBogdan/lingua-studio/pull/4) targets main; it has not been merged. Phase 6 has not started.
+Phase 5 passed CI and real-owner manual validation. [PR #4](https://github.com/NeacsuBogdan/lingua-studio/pull/4) was marked ready and squash-merged into main at `6ecb30b9d7d60fd555531ad7794da995caf74006`.
+
+## Phase 6 acceptance
+
+- [x] Stable `ts-fsrs` version and explicit deterministic scheduler configuration selected
+- [x] Additive card/session/item/history migration generated and tested in PGlite/local PostgreSQL
+- [x] Introduced and trusted-practised senses become cards; saved-only senses do not
+- [x] Explicit idempotent backfill creates New cards without fake reviews
+- [x] Bounded due sessions, refresh/resume, reveal/rate, explicit finish and summary implemented
+- [x] Server-side Again/Hard/Good/Easy scheduling, immutable history and replay protection implemented
+- [x] Review statistics, vocabulary detail status and Overview due count read persisted state
+- [x] Owner/language isolation and strict browser input boundaries covered by integration/E2E tests
+- [x] Final local lint, typecheck, format, 79 tests, migration generation, PostgreSQL checks, 15 authenticated E2E, build and audit pass
+- [x] Neon development pre-inspection, authorized `0006` migration/backfill, repeatability and Phase 0–5 preservation verification
+- [x] Push, draft PR and green GitHub CI ([run #10](https://github.com/NeacsuBogdan/lingua-studio/actions/runs/36563220546))
+- [ ] Real-owner manual desktop/mobile, light/dark, keyboard, OAuth and persistence validation
+
+Do not mark Phase 6 complete before every gate passes. Phase 7 remains out of scope.
