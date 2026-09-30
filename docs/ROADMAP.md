@@ -137,8 +137,8 @@ Phase 6 completed and merged in PR #5. Phase 7 is in progress; do not mark it co
 - [x] Authenticated Mistake Center, weakness detail, corrective practice and Review count/link
 - [x] Domain and migration preservation tests in PGlite and local PostgreSQL 17
 - [x] Local build/lint/typecheck/format, clean migration generation and authenticated production E2E
-- [ ] Dependency audit: explicit npm metadata egress approval pending after automatic review rejection
-- [ ] Explicit Neon development authorization, migration/seed/backfill and preservation checks
+- [x] Explicitly authorized npm audit: 0 vulnerabilities; no dependency changes
+- [x] Authorized Neon development migration, weakness seed, first/repeat backfill and Phase 0–6 preservation checks
 - [ ] Authorized push/PR and green CI
 - [ ] Real-owner manual validation
 
