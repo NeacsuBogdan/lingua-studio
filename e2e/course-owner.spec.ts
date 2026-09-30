@@ -621,6 +621,160 @@ test('owner practises all seven exercise types and retains progress securely', a
     .where(eq(schema.exerciseAttempts.userId, userId!));
   expect(rows).toHaveLength(9);
   expect(rows.filter((row) => !row.isCorrect)).toHaveLength(1);
+  await page.goto('/mistakes');
+  await expect(
+    page.getByRole('heading', { name: 'Mistake Center' }),
+  ).toBeVisible();
+  await expect(
+    page.getByText('1 recorded error', { exact: false }),
+  ).toBeVisible();
+  await page
+    .getByRole('link', { name: 'Past simple and present perfect', exact: true })
+    .click();
+  await expect(page.getByText('Current state: needs practice')).toBeVisible();
+  await expect(
+    page
+      .locator('p')
+      .filter({ hasText: 'Your answer: I have sent the email yesterday.' }),
+  ).toBeVisible();
+  await page.getByRole('link', { name: 'Practice again', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Check answer', exact: true }),
+  ).toBeVisible();
+  // A fresh response excludes RSC scripts retained from the already-graded history page.
+  const practiceMarkup = await (
+    await api.get('/mistakes/en-past-present-perfect/practice')
+  ).text();
+  expect(practiceMarkup).not.toContain('correctOptionId');
+  expect(practiceMarkup).not.toContain('Yesterday is a finished past time.');
+  const practiceRequest = {
+    weaknessId: 'en-past-present-perfect',
+    activityId: 'en-b1-present-perfect-choice',
+    contentVersion: 2,
+    submissionId: randomUUID(),
+    answer: { type: 'multiple_choice', optionId: 'have-sent' },
+  };
+  for (const forged of [
+    { userId: randomUUID() },
+    { isCorrect: true },
+    { recurrence: 0 },
+    { status: 'recovered' },
+  ])
+    expect(
+      (
+        await api.post('/api/mistakes/practice', {
+          headers,
+          data: { ...practiceRequest, ...forged },
+        })
+      ).status(),
+    ).toBe(400);
+  expect(
+    (
+      await api.post('/api/mistakes/practice', {
+        headers,
+        data: { ...practiceRequest, activityId: 'en-b1-narrative-typed' },
+      })
+    ).status(),
+  ).toBe(409);
+  expect(
+    (
+      await api.post('/api/mistakes/practice', {
+        headers,
+        data: { ...practiceRequest, weaknessId: 'unknown' },
+      })
+    ).status(),
+  ).toBe(409);
+  const stateBeforePractice = await sql!`select
+    (select md5(string_agg(to_jsonb(t)::text, '|' order by to_jsonb(t)::text)) from lesson_progress t where user_id = ${userId!}) as progress,
+    (select md5(string_agg(to_jsonb(t)::text, '|' order by to_jsonb(t)::text)) from vocabulary_evidence t where user_id = ${userId!}) as vocabulary,
+    (select md5(string_agg(to_jsonb(t)::text, '|' order by to_jsonb(t)::text)) from review_cards t where user_id = ${userId!}) as cards,
+    (select md5(string_agg(to_jsonb(t)::text, '|' order by to_jsonb(t)::text)) from review_history t where user_id = ${userId!}) as reviews`;
+  await page
+    .getByRole('radio', { name: 'I have sent the email yesterday.' })
+    .check();
+  const submission = page.waitForRequest(
+    (r) => r.url().endsWith('/api/mistakes/practice') && r.method() === 'POST',
+  );
+  await page.getByRole('button', { name: 'Check answer', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  const submitted = (await submission).postDataJSON();
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  const replays = await Promise.all([
+    api.post('/api/mistakes/practice', { headers, data: submitted }),
+    api.post('/api/mistakes/practice', { headers, data: submitted }),
+  ]);
+  expect(replays.map((r) => r.status())).toEqual([200, 200]);
+  expect((await replays[0].json()).result.attemptId).toBe(
+    (await replays[1].json()).result.attemptId,
+  );
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await page
+    .getByRole('radio', { name: 'I sent the email yesterday.', exact: true })
+    .check();
+  await page.getByRole('button', { name: 'Check answer', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await page.getByRole('link', { name: 'Return to area', exact: true }).click();
+  await expect(page.getByText('Current state: recovered')).toBeVisible();
+  await expect(
+    page.getByText('2 recorded errors', { exact: false }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.getByText('Current state: recovered')).toBeVisible();
+  for (const route of [
+    '/mistakes',
+    '/mistakes/en-past-present-perfect',
+    '/mistakes/en-past-present-perfect/practice',
+  ]) {
+    await page.goto(route);
+    await expect(
+      page.getByRole('link', { name: 'Mistakes', exact: true }),
+    ).toHaveAttribute('aria-current', 'page');
+    for (const theme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme: theme });
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      for (const width of [1280, 390, 320]) {
+        await page.setViewportSize({ width, height: 900 });
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true);
+      }
+      const axe = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze();
+      expect(axe.violations).toEqual([]);
+      await page.screenshot({
+        path: testInfo.outputPath(
+          `mistakes-${route.split('/').length}-${theme}.png`,
+        ),
+        fullPage: true,
+      });
+    }
+  }
+  await page.goto('/review');
+  await expect(
+    page.getByText('Areas needing practice: 0.', { exact: false }),
+  ).toBeVisible();
+  // A new failed corrective attempt reactivates the area without course traversal.
+  expect(
+    (
+      await api.post('/api/mistakes/practice', {
+        headers,
+        data: practiceRequest,
+      })
+    ).status(),
+  ).toBe(200);
+  await page.reload();
+  await expect(
+    page.getByText('Areas needing practice: 1.', { exact: false }),
+  ).toBeVisible();
+  const stateAfterPractice = await sql!`select
+    (select md5(string_agg(to_jsonb(t)::text, '|' order by to_jsonb(t)::text)) from lesson_progress t where user_id = ${userId!}) as progress,
+    (select md5(string_agg(to_jsonb(t)::text, '|' order by to_jsonb(t)::text)) from vocabulary_evidence t where user_id = ${userId!}) as vocabulary,
+    (select md5(string_agg(to_jsonb(t)::text, '|' order by to_jsonb(t)::text)) from review_cards t where user_id = ${userId!}) as cards,
+    (select md5(string_agg(to_jsonb(t)::text, '|' order by to_jsonb(t)::text)) from review_history t where user_id = ${userId!}) as reviews`;
+  expect([...stateAfterPractice]).toEqual([...stateBeforePractice]);
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL('/sign-in');
   await page.goto('/course');
@@ -656,6 +810,86 @@ test('owner practises all seven exercise types and retains progress securely', a
   ).toBeVisible();
   await page.goto('/review');
   await expect(page.getByRole('heading', { name: '3 reviews' })).toBeVisible();
+  await page.goto('/mistakes/en-past-present-perfect');
+  await expect(page.getByText('Current state: repeated')).toBeVisible();
+  await expect(
+    page.getByText('3 recorded errors', { exact: false }),
+  ).toBeVisible();
+  // Only temporary fixture identities participate in the isolation check.
+  const fixtureDb = drizzle(sql!, { schema });
+  const [other] = await fixtureDb
+    .insert(schema.users)
+    .values({
+      email: `phase4-e2e-${randomUUID()}@example.test`,
+      name: 'Isolated learner',
+      emailVerified: true,
+    })
+    .returning();
+  const otherContext = await browser.newContext({
+    baseURL: 'http://127.0.0.1:3100',
+  });
+  try {
+    await fixtureDb
+      .update(schema.accounts)
+      .set({ accountId: 'phase7-fixture-temporarily-inactive' })
+      .where(eq(schema.accounts.userId, userId!));
+    await fixtureDb.insert(schema.accounts).values({
+      userId: other.id,
+      providerId: 'github',
+      accountId: fixtureOwnerId,
+    });
+    await fixtureDb.insert(schema.learnerProfiles).values({
+      userId: other.id,
+      nativeLanguage: 'ro',
+      learningLanguage: 'en',
+    });
+    const otherToken = randomBytes(32).toString('hex');
+    await fixtureDb.insert(schema.sessions).values({
+      userId: other.id,
+      token: otherToken,
+      expiresAt: new Date(Date.now() + 30 * 60000),
+    });
+    await otherContext.addCookies([
+      {
+        name: 'better-auth.session_token',
+        value: encodeURIComponent(
+          otherToken +
+            '.' +
+            createHmac('sha256', secret).update(otherToken).digest('base64'),
+        ),
+        domain: '127.0.0.1',
+        path: '/',
+        httpOnly: true,
+        sameSite: 'Lax',
+      },
+    ]);
+    const otherPage = await otherContext.newPage();
+    await otherPage.goto('/mistakes');
+    await expect(otherPage.getByText('No recorded mistakes yet')).toBeVisible();
+    await otherPage.goto('/mistakes/en-past-present-perfect');
+    await expect(
+      otherPage.getByText('Your answer:', { exact: false }),
+    ).toHaveCount(0);
+    await otherPage.goto('/mistakes/en-past-present-perfect/practice');
+    await expect(
+      otherPage.getByRole('heading', { name: 'Practice unavailable' }),
+    ).toBeVisible();
+    expect(
+      (
+        await otherContext.request.post('/api/mistakes/practice', {
+          headers,
+          data: { ...practiceRequest, submissionId: randomUUID() },
+        })
+      ).status(),
+    ).toBe(409);
+  } finally {
+    await otherContext.close();
+    await fixtureDb.delete(schema.users).where(eq(schema.users.id, other.id));
+    await fixtureDb
+      .update(schema.accounts)
+      .set({ accountId: fixtureOwnerId })
+      .where(eq(schema.accounts.userId, userId!));
+  }
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL('/sign-in');
   expect(errors).toEqual([]);
