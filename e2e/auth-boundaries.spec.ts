@@ -9,6 +9,9 @@ test('protected pages redirect visitors to sign-in', async ({ page }) => {
     '/vocabulary',
     '/vocabulary/en-decision-noun-1',
     '/review',
+    '/mistakes',
+    '/mistakes/en-past-present-perfect',
+    '/mistakes/en-past-present-perfect/practice',
     '/review/session/00000000-0000-4000-8000-000000000000',
     '/settings',
   ]) {
@@ -24,6 +27,9 @@ test('protected pages redirect visitors to sign-in', async ({ page }) => {
 });
 
 test('anonymous review APIs are denied', async ({ request }) => {
+  expect(
+    (await request.post('/api/mistakes/practice', { data: {} })).status(),
+  ).toBe(401);
   expect(
     (
       await request.get(

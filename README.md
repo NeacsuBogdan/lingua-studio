@@ -1,6 +1,6 @@
 # Lingua Studio
 
-Personal language-learning application. Phases 0–5 are complete on `main`; Phase 5 passed real-owner validation and was squash-merged at `6ecb30b9d7d60fd555531ad7794da995caf74006`. Phase 6 spaced repetition is under validation on `feat/phase-6-spaced-repetition`. GitHub owner-only authentication, PostgreSQL sessions and learner preferences remain in place.
+Personal language-learning application. Phases 0-6 are complete on `main`. Phase 6 passed local, Neon development, CI and real-owner validation; PR #5 was marked ready and squash-merged at `a5438be55e04c49af47701d6b5474aa51de03853`. Phase 7 Mistake Engine is in development on `feat/phase-7-mistake-engine`.
 
 ## Local setup
 
@@ -13,6 +13,7 @@ npm run db:inspect
 npm run db:migrate
 npm run db:seed
 npm run db:review-backfill
+npm run db:mistake-backfill
 npm run db:verify
 npm run dev
 ```
@@ -54,8 +55,12 @@ Exercise answers are graded against persisted content on the server. Hidden corr
 
 Phase 5 adds a small curated English vocabulary collection with stable sense IDs, definitions, examples, CEFR levels, tags, families and collocations. Traversing an introductory block records an encounter; only a trusted graded attempt creates practice evidence. Saving stays separate from learning. Migration `0005`, Neon preservation checks, CI and real-owner manual vocabulary validation passed before [PR #4](https://github.com/NeacsuBogdan/lingua-studio/pull/4) was merged.
 
-Phase 6 adds FSRS-backed vocabulary recognition cards and bounded, resumable `/review` sessions. Introduced or practised senses become immediately due; saved-only senses do not. The explicit `db:review-backfill` command creates New cards for eligible older vocabulary without inventing review history. Ratings Again/Hard/Good/Easy schedule server-side, with immutable history and transport replay protection. The Overview shows the real due count. Migration `0006` and the idempotent backfill were applied **only to Neon development** after explicit authorization and before/after preservation checks; no production database was touched. Real-owner review UX validation remains open, so Phase 6 is not yet complete or merged. See [architecture](docs/ARCHITECTURE.md) for exact scheduler configuration.
+Phase 6 adds FSRS-backed vocabulary recognition cards and bounded, resumable `/review` sessions. Introduced or practised senses become immediately due; saved-only senses do not. The explicit `db:review-backfill` command creates New cards for eligible older vocabulary without inventing review history. Ratings Again/Hard/Good/Easy schedule server-side, with immutable history and transport replay protection. The Overview shows the real due count. Migration `0006` and the idempotent backfill were applied **only to Neon development** after explicit authorization and before/after preservation checks; no production database was touched. Real-owner Review sessions, all four ratings, refresh/resume and persistence passed before PR #5 was merged. See [architecture](docs/ARCHITECTURE.md) for exact scheduler configuration.
 
 The versioned curriculum lives in `src/content/en/course.ts` and `src/content/en/exercises.ts`, validated by `src/content/course-schema.ts` and `src/content/activity-schema.ts`, and published by the idempotent `db:seed` command. Run the committed migrations before seeding. `db:verify` checks the catalog (18 blocks and 7 exercise types) and detects leftover test fixtures without printing learner data. It reports profile and attempt counts. Content, progress and attempts use separate tables. See [architecture](docs/ARCHITECTURE.md) for grading, normalization, versioning and unlock rules.
 
 Read [handoff](docs/HANDOFF.md), [roadmap](docs/ROADMAP.md), and [architecture](docs/ARCHITECTURE.md) before continuing development. The full original brief is in `docs/MASTER-BRIEF.txt`.
+
+Phase 7 adds the authenticated Mistake Center (`/mistakes`), five authored weakness concepts, recent saved errors, lifetime recurrence and separate corrective practice. Migration `0007_red_shockwave.sql` is additive. Incorrect assessed lesson attempts create immutable occurrences; `db:mistake-backfill` derives older occurrences from saved incorrect attempts with their original timestamps and is repeat-safe. It never invents mistakes from FSRS ratings. Recurrence combines lesson errors and failed corrective attempts, with source counts visible. A later successful corrective attempt means recovered, not permanently mastered; a new error reactivates the area. Recent means the latest 20 errors. Practice reuses server grading without changing lesson progress, vocabulary evidence or FSRS. Lesson content version remains 2. See architecture for exact semantics.
+
+Phase 7 passed local checks and the authorized Neon development migration, weakness seed and historical backfill. All 28 Phase 0–6 table counts and SHA-256 fingerprints remained unchanged; repeat migration/seed/backfill created no additional history. The dependency audit found zero vulnerabilities. [Draft PR #6](https://github.com/NeacsuBogdan/lingua-studio/pull/6) passed CI and remains unmerged pending real-owner manual validation. Phase 8 Daily Learning remains out of scope.

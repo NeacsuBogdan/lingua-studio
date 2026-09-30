@@ -1,3 +1,5 @@
+import { seedEnglishWeaknesses } from '../src/server/mistakes/seed';
+import { backfillMistakes } from '../src/server/mistakes/record';
 import nextEnv from '@next/env';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -19,6 +21,7 @@ async function main() {
       'migrate',
       'seed',
       'review-backfill',
+      'mistake-backfill',
       'verify',
     ].includes(command)
   ) {
@@ -79,8 +82,14 @@ async function main() {
         });
       await seedEnglishCourse(db);
       await seedEnglishVocabulary(db);
+      await seedEnglishWeaknesses(db);
       console.log(
         'Language reference data, English course and vocabulary seeded.',
+      );
+    } else if (command === 'mistake-backfill') {
+      console.log(
+        'Mistake evidence backfilled (counts only):',
+        await backfillMistakes(db),
       );
     } else if (command === 'review-backfill') {
       const result = await backfillEligibleCards(db, new Date());
@@ -88,6 +97,11 @@ async function main() {
     } else if (command === 'verify') {
       const [summary] = await sql`
         select
+          (select count(*)::integer from weakness_definitions) as weaknesses,
+          (select count(*)::integer from activity_weaknesses where is_published) as weakness_mappings,
+          (select count(*)::integer from mistake_occurrences) as mistake_occurrences,
+          (select count(*)::integer from mistake_practice_attempts) as mistake_practice_attempts,
+          (select count(*)::integer from exercise_attempts a join activity_weaknesses m on m.activity_id = a.activity_id and m.content_version = a.content_version left join mistake_occurrences o on o.attempt_id = a.id and o.weakness_id = m.weakness_id where not a.is_correct and o.id is null) as missing_mistakes,
           (select count(*)::integer from learner_profiles) as profiles,
           (select count(*)::integer from users where email like 'phase3-e2e-%@example.test' or email like 'phase4-e2e-%@example.test') as test_fixtures,
           (select count(*)::integer from exercise_attempts) as attempts,
@@ -109,6 +123,9 @@ async function main() {
           ,(select count(*)::integer from (select user_id, sense_id from user_vocabulary where introduced_at is not null union select user_id, sense_id from vocabulary_evidence) eligible left join review_cards c on c.user_id = eligible.user_id and c.sense_id = eligible.sense_id and c.kind = 'recognition' where c.id is null) as missing_review_cards
       `;
       if (
+        summary.weaknesses !== 5 ||
+        summary.weakness_mappings !== 8 ||
+        summary.missing_mistakes !== 0 ||
         summary.test_fixtures !== 0 ||
         summary.courses !== 1 ||
         summary.levels !== 6 ||

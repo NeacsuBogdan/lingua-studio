@@ -50,6 +50,13 @@
       "when": 1790680259524,
       "tag": "0006_sour_salo",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790752439371,
+      "tag": "0007_red_shockwave",
+      "breakpoints": true
     }
   ]
 }

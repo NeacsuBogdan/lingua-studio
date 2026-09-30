@@ -16,6 +16,7 @@ const links = [
   { href: '/course', label: 'Learning path', icon: Route },
   { href: '/vocabulary', label: 'Vocabulary', icon: LibraryBig },
   { href: '/review', label: 'Review', icon: RotateCcw },
+  { href: '/mistakes', label: 'Mistakes', icon: RotateCcw },
   { href: '/settings', label: 'Preferences', icon: SlidersHorizontal },
 ];
 export function Navigation({ displayName }: { displayName: string }) {
@@ -38,14 +39,18 @@ export function Navigation({ displayName }: { displayName: string }) {
             href={href}
             className={
               pathname === href ||
-              ((href === '/vocabulary' || href === '/review') &&
+              ((href === '/vocabulary' ||
+                href === '/review' ||
+                href === '/mistakes') &&
                 pathname.startsWith(href + '/'))
                 ? 'nav-link active'
                 : 'nav-link'
             }
             aria-current={
               pathname === href ||
-              ((href === '/vocabulary' || href === '/review') &&
+              ((href === '/vocabulary' ||
+                href === '/review' ||
+                href === '/mistakes') &&
                 pathname.startsWith(href + '/'))
                 ? 'page'
                 : undefined
