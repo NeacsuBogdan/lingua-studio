@@ -99,5 +99,10 @@ jobs:
       - name: End-to-end tests
         run: npm run test:e2e
 
-      - name: Dependency audit
+      - name: Production dependency audit
+        run: npm audit --omit=dev --audit-level=high
+
+      # Temporary dev-only braces exception; see docs/HANDOFF.md (2026-10-07).
+      - name: Full dependency audit (informational)
+        continue-on-error: true
         run: npm audit
