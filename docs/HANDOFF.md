@@ -4,6 +4,14 @@
 
 Phases 0–6 are complete on main. Phase 6 passed local validation, Neon development migration/backfill, CI and real-owner Review/session, Again/Hard/Good/Easy, refresh/resume and persistence validation. PR #5 was marked ready and squash-merged at `a5438be55e04c49af47701d6b5474aa51de03853` (confirmed in local Git history). Current branch: `feat/phase-7-mistake-engine`. Phase 7 passed local checks, the authorized Neon development gate and [draft PR #6](https://github.com/NeacsuBogdan/lingua-studio/pull/6) CI. Phase 8 is not authorized. Use a production build for owner validation if intermittent development HMR interferes.
 
+## Temporary dependency audit policy (2026-10-07)
+
+The maintenance branch `chore/security-audit-2026-10-07` uses a blocking **Production dependency audit** step running `npm audit --omit=dev --audit-level=high`. Any high or critical production dependency vulnerability fails CI. The production audit currently reports **0 vulnerabilities**.
+
+The full audit currently reports five high entries derived from one dev-only advisory, [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm). Its exact dependency chain is `eslint-config-next@16.4.0 -> @next/eslint-plugin-next@16.4.0 -> fast-glob@3.3.1 -> micromatch@4.0.8 -> braces@3.0.3`. This chain is used by ESLint, is absent from the production dependency tree, and has no application runtime import. No patched upstream braces release exists as of 2026-10-07; the compatible Next.js/ESLint 16.4.0 tree still includes it.
+
+The separate **Full dependency audit (informational)** step still runs `npm audit` and exposes its output and failed outcome, but temporarily uses `continue-on-error: true` so this unavoidable dev-only advisory does not fail the job. This step is informational, not passing security validation; review its output for new findings. No production advisory is exempted. Remove this exception and restore a blocking full audit as soon as a compatible patched upstream dependency tree exists. No forced audit fix, downgrade or dependency override is used.
+
 ## Phase 7 implementation and local validation
 
 - Implemented migration `0007_red_shockwave.sql`, five validated English weakness definitions and eight version-scoped graded activity mappings. Incorrect persisted lesson attempts create immutable occurrences inside the grading transaction. The explicit `db:mistake-backfill` preserves source timestamps and ignores correct/unmapped-version history. It creates no mistakes from FSRS ratings. The seed retains historical mappings, retires removed current mappings, and refuses identity removal without a migration. Lesson content version remains 2.
