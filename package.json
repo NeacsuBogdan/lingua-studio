@@ -18,6 +18,7 @@
     "db:check": "tsx scripts/db.ts check",
     "db:inspect": "tsx scripts/db.ts inspect",
     "db:verify": "tsx scripts/db.ts verify",
+    "db:mistake-backfill": "tsx scripts/db.ts mistake-backfill",
     "db:review-backfill": "tsx scripts/db.ts review-backfill"
   },
   "keywords": [],

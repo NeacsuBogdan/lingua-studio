@@ -27,14 +27,16 @@ export function ExercisePlayer({
   initialAnswer,
   continueAction,
   final,
+  weaknessId,
 }: {
   activity: PublicExercise;
   lessonId: string;
   contentVersion: number;
   initialResult: SavedResult | null;
   initialAnswer: ExerciseAnswer | null;
-  continueAction: (data: FormData) => Promise<void>;
+  continueAction?: (data: FormData) => Promise<void>;
   final: boolean;
+  weaknessId?: string;
 }) {
   const [answer, setAnswer] = useState<ExerciseAnswer | null>(initialAnswer);
   const [result, setResult] = useState(initialResult);
@@ -69,17 +71,20 @@ export function ExercisePlayer({
     setSessionEnded(false);
     submissionId.current ??= crypto.randomUUID();
     try {
-      const response = await fetch('/api/exercises/attempt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          submissionId: submissionId.current,
-          lessonId,
-          activityId: activity.id,
-          contentVersion,
-          answer,
-        }),
-      });
+      const response = await fetch(
+        weaknessId ? '/api/mistakes/practice' : '/api/exercises/attempt',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            submissionId: submissionId.current,
+            ...(weaknessId ? { weaknessId } : { lessonId }),
+            activityId: activity.id,
+            contentVersion,
+            answer,
+          }),
+        },
+      );
       const body: unknown = await response.json();
       const parsed = savedResultSchema.safeParse(
         body && typeof body === 'object' && 'result' in body
@@ -92,7 +97,7 @@ export function ExercisePlayer({
           response.status === 401
             ? 'Your session has ended. Sign in again before answering.'
             : response.status === 409
-              ? 'The lesson has changed. Refresh before continuing.'
+              ? 'This activity has changed or is unavailable. Refresh before continuing.'
               : response.status === 400
                 ? 'Check that your answer is complete and uses each item once.'
                 : 'Your answer could not be saved. Please try again.',
@@ -165,13 +170,16 @@ export function ExercisePlayer({
             >
               Try again
             </button>
-            <form action={continueAction}>
-              <ContinueButton final={final} />
-            </form>
+            {continueAction && (
+              <form action={continueAction}>
+                <ContinueButton final={final} />
+              </form>
+            )}
           </div>
           <p className="form-hint">
-            Each checked answer is saved separately. You can continue after
-            practising; lesson completion is separate from correctness.
+            {weaknessId
+              ? 'Each checked answer is saved as corrective practice. Return to the area to see your updated history.'
+              : 'Each checked answer is saved separately. You can continue after practising; lesson completion is separate from correctness.'}
           </p>
         </>
       )}

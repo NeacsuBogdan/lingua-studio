@@ -1562,3 +1562,33 @@ footer {
     text-align: left;
   }
 }
+
+.mistakes-page {
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+}
+.mistake-history {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.mistake-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
+}
+.mistake-filters label {
+  display: grid;
+  gap: 0.4rem;
+}
+.mistake-filters select {
+  color: var(--text);
+  background: var(--surface);
+  padding: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  max-width: 100%;
+}

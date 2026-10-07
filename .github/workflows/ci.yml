@@ -82,6 +82,11 @@ jobs:
       - name: Backfill eligible review cards
         run: npm run db:review-backfill
 
+      - name: Backfill assessed mistake evidence twice
+        run: |
+          npm run db:mistake-backfill
+          npm run db:mistake-backfill
+
       - name: Verify seeded catalog
         run: npm run db:verify
 

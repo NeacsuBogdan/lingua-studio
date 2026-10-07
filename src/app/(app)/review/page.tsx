@@ -5,6 +5,7 @@ import { requireOwner } from '@/server/auth/session';
 import { getOrCreateProfile } from '@/server/profile/repository';
 import { getDb } from '@/server/db/client';
 import { getReviewOverview } from '@/server/review/repository';
+import { listWeaknesses } from '@/server/mistakes/repository';
 import { startReviewAction } from './actions';
 
 export const metadata: Metadata = { title: 'Review' };
@@ -17,6 +18,14 @@ export default async function ReviewPage() {
     profile.learningLanguage,
     new Date(),
   );
+  const mistakes = await listWeaknesses(
+    getDb(),
+    owner.id,
+    profile.learningLanguage,
+  );
+  const activeMistakes = mistakes.filter(
+    (w) => w.status !== 'recovered',
+  ).length;
   return (
     <div className="review-page">
       <div className="page-heading">
@@ -29,6 +38,16 @@ export default async function ReviewPage() {
           </p>
         </div>
       </div>
+      <Card>
+        <h2>Mistakes to revisit</h2>
+        <p>
+          Areas needing practice: {activeMistakes}. Corrective practice is
+          separate from memory scheduling.
+        </p>
+        <Link className="text-link" href="/mistakes">
+          Open Mistake Center
+        </Link>
+      </Card>
       <div className="review-grid">
         <Card>
           <p className="metric-label">Ready now</p>

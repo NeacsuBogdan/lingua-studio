@@ -1,6 +1,6 @@
 # Implementation roadmap
 
-Current state: **Phases 0–5 complete on main** at Phase 5 squash commit `6ecb30b9d7d60fd555531ad7794da995caf74006`. Phase 6 is implemented on `feat/phase-6-spaced-repetition`; Neon development migration/backfill and preservation checks passed. [Draft PR #5](https://github.com/NeacsuBogdan/lingua-studio/pull/5) passed CI; real-owner validation remains open.
+Current state: **Phases 0-6 complete on main** at `a5438be55e04c49af47701d6b5474aa51de03853`. PR #5 passed CI and real-owner validation, was marked ready and squash-merged. Phase 7 implementation is authorized on `feat/phase-7-mistake-engine`; local validation precedes the explicit Neon gate.
 
 | Phase | Scope                           | Status      |
 | ----- | ------------------------------- | ----------- |
@@ -10,8 +10,8 @@ Current state: **Phases 0–5 complete on main** at Phase 5 squash commit `6ecb3
 | 3     | CONTENT AND COURSE ENGINE       | Completed   |
 | 4     | EXERCISE ENGINE                 | Completed   |
 | 5     | VOCABULARY SYSTEM               | Completed   |
-| 6     | SPACED REPETITION               | In progress |
-| 7     | MISTAKE ENGINE                  | Planned     |
+| 6     | SPACED REPETITION               | Completed   |
+| 7     | MISTAKE ENGINE                  | In progress |
 | 8     | DAILY LEARNING                  | Planned     |
 | 9     | PLACEMENT TEST                  | Planned     |
 | 10    | DASHBOARD AND ANALYTICS         | Planned     |
@@ -124,6 +124,22 @@ Phase 5 passed CI and real-owner manual validation. [PR #4](https://github.com/N
 - [x] Final local lint, typecheck, format, 79 tests, migration generation, PostgreSQL checks, 15 authenticated E2E, build and audit pass
 - [x] Neon development pre-inspection, authorized `0006` migration/backfill, repeatability and Phase 0–5 preservation verification
 - [x] Push, draft PR and green GitHub CI ([run #10](https://github.com/NeacsuBogdan/lingua-studio/actions/runs/36563220546))
-- [ ] Real-owner manual desktop/mobile, light/dark, keyboard, OAuth and persistence validation
+- [x] Real-owner manual Review/session, ratings, refresh/resume and persistence validation
 
-Do not mark Phase 6 complete before every gate passes. Phase 7 remains out of scope.
+Phase 6 completed and merged in PR #5. Phase 7 is in progress; do not mark it complete before real-owner validation. Phase 8 remains out of scope.
+
+## Phase 7 acceptance
+
+- [x] Explicit validated taxonomy and version-scoped activity mappings; lesson version 2 preserved
+- [x] Immutable assessed mistake occurrences and separate corrective attempts
+- [x] Idempotent historical backfill with source timestamps and replay protection
+- [x] Evidence-derived recurrence, recent ordering, recovery and reactivation
+- [x] Authenticated Mistake Center, weakness detail, corrective practice and Review count/link
+- [x] Domain and migration preservation tests in PGlite and local PostgreSQL 17
+- [x] Local build/lint/typecheck/format, clean migration generation and authenticated production E2E
+- [x] Explicitly authorized npm audit: 0 vulnerabilities; no dependency changes
+- [x] Authorized Neon development migration, weakness seed, first/repeat backfill and Phase 0–6 preservation checks
+- [x] Authorized push, [draft PR #6](https://github.com/NeacsuBogdan/lingua-studio/pull/6) and green [CI run #16](https://github.com/NeacsuBogdan/lingua-studio/actions/runs/36690674122)
+- [ ] Real-owner manual validation
+
+No Phase 8 daily queue or cross-system orchestration is included. Repeated means at least two recorded errors; recovered requires a successful corrective attempt strictly after the latest error. Lifetime recurrence remains visible. See ARCHITECTURE.md for the complete evidence semantics.

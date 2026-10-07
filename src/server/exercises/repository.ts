@@ -18,6 +18,7 @@ import {
 } from '../../lib/exercise-answer';
 import { evaluateExercise } from './evaluate';
 import { ensureReviewCard } from '../review/repository';
+import { recordMistakes } from '../mistakes/record';
 
 type Database = ReturnType<typeof getDb>;
 export class AttemptError extends Error {
@@ -137,6 +138,7 @@ export async function submitExercise(
         score: result.score,
       })
       .returning({ id: exerciseAttempts.id });
+    await recordMistakes(database, attempt.id);
     const targets = await tx
       .select({
         senseId: activityVocabulary.senseId,

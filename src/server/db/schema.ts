@@ -17,6 +17,120 @@ import {
 import { sql } from 'drizzle-orm';
 import type { LearningActivity } from '../../content/activity-schema';
 import type { ExerciseAnswer, GradingResult } from '../../lib/exercise-answer';
+export const weaknessDefinitions = pgTable(
+  'weakness_definitions',
+  {
+    id: text('id').primaryKey(),
+    languageCode: text('language_code')
+      .notNull()
+      .references(() => languages.code),
+    skill: text('skill').notNull(),
+    label: text('label').notNull(),
+    description: text('description').notNull(),
+    isPublished: boolean('is_published').notNull().default(true),
+  },
+  (t) => [
+    check(
+      'weakness_skill_allowed',
+      sql`${t.skill} in ('grammar','vocabulary','reading','communication')`,
+    ),
+    index('weakness_language_idx').on(t.languageCode),
+  ],
+);
+// Version-scoped mappings prevent future editorial changes reclassifying old answers.
+export const activityWeaknesses = pgTable(
+  'activity_weaknesses',
+  {
+    activityId: text('activity_id')
+      .notNull()
+      .references(() => lessonActivities.id),
+    weaknessId: text('weakness_id')
+      .notNull()
+      .references(() => weaknessDefinitions.id),
+    contentVersion: integer('content_version').notNull(),
+    isPublished: boolean('is_published').notNull().default(true),
+  },
+  (t) => [
+    primaryKey({ columns: [t.activityId, t.contentVersion, t.weaknessId] }),
+    index('activity_weakness_target_idx').on(t.weaknessId),
+    check('activity_weakness_version_positive', sql`${t.contentVersion} > 0`),
+  ],
+);
+export const mistakeOccurrences = pgTable(
+  'mistake_occurrences',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    weaknessId: text('weakness_id')
+      .notNull()
+      .references(() => weaknessDefinitions.id),
+    attemptId: uuid('attempt_id')
+      .notNull()
+      .references(() => exerciseAttempts.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    uniqueIndex('mistake_occurrence_source_unique').on(
+      t.attemptId,
+      t.weaknessId,
+    ),
+    index('mistake_occurrence_user_recent_idx').on(t.userId, t.createdAt),
+    index('mistake_occurrence_user_weakness_idx').on(
+      t.userId,
+      t.weaknessId,
+      t.createdAt,
+    ),
+  ],
+);
+export const mistakePracticeAttempts = pgTable(
+  'mistake_practice_attempts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    weaknessId: text('weakness_id')
+      .notNull()
+      .references(() => weaknessDefinitions.id),
+    activityId: text('activity_id')
+      .notNull()
+      .references(() => lessonActivities.id),
+    contentVersion: integer('content_version').notNull(),
+    submissionId: uuid('submission_id').notNull(),
+    submittedAnswer: jsonb('submitted_answer')
+      .$type<ExerciseAnswer>()
+      .notNull(),
+    result: jsonb('result').$type<GradingResult>().notNull(),
+    isCorrect: boolean('is_correct').notNull(),
+    score: real('score').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('mistake_practice_submission_unique').on(
+      t.userId,
+      t.submissionId,
+    ),
+    index('mistake_practice_user_weakness_idx').on(
+      t.userId,
+      t.weaknessId,
+      t.createdAt,
+    ),
+    check('mistake_practice_version_positive', sql`${t.contentVersion} > 0`),
+    check(
+      'mistake_practice_score_range',
+      sql`${t.score} >= 0 and ${t.score} <= 1`,
+    ),
+    check(
+      'mistake_practice_answer_object',
+      sql`jsonb_typeof(${t.submittedAnswer}) = 'object'`,
+    ),
+  ],
+);
+
 export const cefr = pgEnum('cefr', ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
 export const exam = pgEnum('cambridge_exam', [
   'b2-first',
