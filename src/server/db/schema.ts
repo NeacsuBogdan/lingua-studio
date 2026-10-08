@@ -13,6 +13,7 @@ import {
   real,
   doublePrecision,
   index,
+  date,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import type { LearningActivity } from '../../content/activity-schema';
@@ -776,5 +777,97 @@ export const reviewHistory = pgTable(
     index('review_history_user_reviewed_idx').on(t.userId, t.reviewedAt),
     index('review_history_card_reviewed_idx').on(t.cardId, t.reviewedAt),
     check('review_history_rating_allowed', sql`${t.rating} between 1 and 4`),
+  ],
+);
+
+export const dailySessions = pgTable(
+  'daily_sessions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    languageCode: text('language_code')
+      .notNull()
+      .references(() => languages.code),
+    studyDate: date('study_date', { mode: 'string' }).notNull(),
+    timezone: text('timezone').notNull(),
+    targetMinutes: integer('target_minutes').notNull(),
+    plannedMinutes: doublePrecision('planned_minutes').notNull(),
+    plannerVersion: text('planner_version').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('daily_sessions_user_language_date_unique').on(
+      t.userId,
+      t.languageCode,
+      t.studyDate,
+    ),
+    check(
+      'daily_sessions_target_allowed',
+      sql`${t.targetMinutes} in (5,10,20,30,45,60)`,
+    ),
+    check(
+      'daily_sessions_minutes_bounded',
+      sql`${t.plannedMinutes} > 0 and ${t.plannedMinutes} <= ${t.targetMinutes}`,
+    ),
+    check(
+      'daily_sessions_snapshot_valid',
+      sql`length(${t.timezone}) between 1 and 100 and length(${t.plannerVersion}) between 1 and 80`,
+    ),
+    check(
+      'daily_sessions_completion_valid',
+      sql`${t.completedAt} is null or ${t.completedAt} >= ${t.createdAt}`,
+    ),
+  ],
+);
+
+export const dailySessionItems = pgTable(
+  'daily_session_items',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    sessionId: uuid('session_id')
+      .notNull()
+      .references(() => dailySessions.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    kind: text('kind').notNull(),
+    label: text('label').notNull(),
+    focus: jsonb('focus').$type<string[]>().notNull(),
+    estimatedMinutes: doublePrecision('estimated_minutes').notNull(),
+    targetCount: integer('target_count').notNull(),
+    baselineCount: integer('baseline_count').notNull().default(0),
+    completedUnits: integer('completed_units').notNull().default(0),
+    status: text('status').notNull().default('pending'),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    unavailableAt: timestamp('unavailable_at', { withTimezone: true }),
+    lessonId: text('lesson_id').references(() => lessons.id),
+    lessonContentVersion: integer('lesson_content_version'),
+    startPosition: integer('start_position'),
+    targetPosition: integer('target_position'),
+    weaknessId: text('weakness_id').references(() => weaknessDefinitions.id),
+  },
+  (t) => [
+    uniqueIndex('daily_items_position_unique').on(t.sessionId, t.position),
+    uniqueIndex('daily_items_single_block_unique')
+      .on(t.sessionId, t.kind)
+      .where(sql`${t.kind} in ('review','lesson')`),
+    uniqueIndex('daily_items_weakness_unique')
+      .on(t.sessionId, t.weaknessId)
+      .where(sql`${t.kind} = 'mistake'`),
+    check(
+      'daily_items_counts_valid',
+      sql`${t.position} > 0 and ${t.estimatedMinutes} > 0 and ${t.targetCount} > 0 and ${t.baselineCount} >= 0 and ${t.completedUnits} between 0 and ${t.targetCount}`,
+    ),
+    check(
+      'daily_items_status_consistent',
+      sql`(${t.status} = 'pending' and ${t.completedAt} is null and ${t.unavailableAt} is null) or (${t.status} = 'completed' and ${t.completedAt} is not null and ${t.unavailableAt} is null and ${t.completedUnits} = ${t.targetCount}) or (${t.status} = 'unavailable' and ${t.completedAt} is null and ${t.unavailableAt} is not null)`,
+    ),
+    check(
+      'daily_items_source_consistent',
+      sql`(${t.kind} = 'review' and ${t.targetCount} <= 20 and ${t.lessonId} is null and ${t.lessonContentVersion} is null and ${t.startPosition} is null and ${t.targetPosition} is null and ${t.weaknessId} is null) or (${t.kind} = 'lesson' and ${t.lessonId} is not null and ${t.lessonContentVersion} is not null and ${t.startPosition} is not null and ${t.targetPosition} is not null and ${t.lessonContentVersion} > 0 and ${t.startPosition} >= 0 and ${t.targetPosition} > ${t.startPosition} and ${t.targetCount} = ${t.targetPosition} - ${t.startPosition} and ${t.weaknessId} is null) or (${t.kind} = 'mistake' and ${t.weaknessId} is not null and ${t.targetCount} = 1 and ${t.lessonId} is null and ${t.lessonContentVersion} is null and ${t.startPosition} is null and ${t.targetPosition} is null)`,
+    ),
   ],
 );

@@ -8,11 +8,13 @@ import {
   BookOpen,
   LibraryBig,
   RotateCcw,
+  CalendarDays,
 } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { SignOutButton } from './sign-out-button';
 const links = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
+  { href: '/daily', label: 'Today', icon: CalendarDays },
   { href: '/course', label: 'Learning path', icon: Route },
   { href: '/vocabulary', label: 'Vocabulary', icon: LibraryBig },
   { href: '/review', label: 'Review', icon: RotateCcw },
