@@ -4,6 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 test('protected pages redirect visitors to sign-in', async ({ page }) => {
   for (const route of [
     '/',
+    '/daily',
     '/course',
     '/course/lesson/en-b1-present-perfect',
     '/vocabulary',

@@ -12,17 +12,13 @@ import { requireOwner } from '@/server/auth/session';
 import { getOrCreateProfile } from '@/server/profile/repository';
 import { languageLabels } from '@/lib/language-labels';
 import { getDb } from '@/server/db/client';
-import { getCourseMap } from '@/server/course/repository';
+import { getTodayDaily } from '@/server/daily/repository';
 import { getDueCount } from '@/server/review/repository';
 export default async function Home() {
   const owner = await requireOwner();
   const profile = await getOrCreateProfile(owner.id);
   const language = languageLabels[profile.learningLanguage] ?? 'your language';
-  const course = await getCourseMap(
-    getDb(),
-    owner.id,
-    profile.learningLanguage,
-  );
+  const today = await getTodayDaily(getDb(), owner.id, new Date());
   const dueCount = await getDueCount(
     getDb(),
     owner.id,
@@ -74,34 +70,45 @@ export default async function Home() {
         </section>
         <Card className="daily-card">
           <div className="section-top">
-            <h2>Your study path</h2>
+            <h2>Today’s goal</h2>
             <Clock3 size={19} />
           </div>
           <div className="goal-ring">
             <span>
-              <strong>{course?.completedCount ?? 0}</strong>
-              <small>lessons completed</small>
+              <strong>
+                {today.plan?.session.targetMinutes ?? profile.dailyMinutes}
+              </strong>
+              <small>minute goal</small>
             </span>
           </div>
           <h3>
-            {course?.recommended
-              ? 'Your next lesson is ready.'
-              : course
-                ? 'Your path is complete for now.'
-                : 'Your story starts here.'}
+            {today.plan?.session.completedAt
+              ? today.plan.items.some((i) => i.status === 'unavailable')
+                ? 'Today’s available plan is complete.'
+                : 'Today’s plan is complete.'
+              : today.plan
+                ? 'Your plan is ready to continue.'
+                : 'Make a little room to learn.'}
           </h3>
           <p>
-            {course?.recommended
-              ? course.recommended.title
-              : course
-                ? 'More lessons will be published later.'
-                : 'Choose English in Preferences to open the first course.'}
+            ~
+            {today.plan?.session.plannedMinutes ??
+              today.preview!.reduce(
+                (sum, i) => sum + i.estimatedMinutes,
+                0,
+              )}{' '}
+            min planned
           </p>
           <div className="quiet-tag">
-            {course
-              ? `${course.completedCount} of ${course.lessonCount} published lessons`
-              : 'No published course'}
+            {today.plan
+              ? `${today.plan.items.filter((i) => i.status === 'completed').length}/${today.plan.items.length} tasks complete`
+              : 'Preview before you start'}
           </div>
+          <p>
+            <Link href="/daily" className="text-link">
+              {today.plan ? 'Open today’s plan' : 'Preview today’s plan'}
+            </Link>
+          </p>
         </Card>
       </div>
       <div className="section-heading">

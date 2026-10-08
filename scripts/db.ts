@@ -97,13 +97,17 @@ async function main() {
     } else if (command === 'verify') {
       const [summary] = await sql`
         select
+          (select count(*)::integer from daily_sessions) as daily_sessions,
+          (select count(*)::integer from daily_session_items) as daily_items,
+          (select count(*)::integer from daily_sessions s left join lateral (select count(*)::integer as tasks, coalesce(sum(estimated_minutes), 0) as minutes, min(position) as first, max(position) as last, count(*) filter (where status = 'pending') as pending from daily_session_items i where i.session_id = s.id) p on true where p.tasks not between 1 and 5 or p.minutes <> s.planned_minutes or p.first <> 1 or p.last <> p.tasks or (s.completed_at is not null and p.pending > 0)) as invalid_daily_plans,
+          (select count(*)::integer from pg_trigger where tgname in ('daily_session_immutable', 'daily_item_immutable', 'daily_session_totals', 'daily_item_totals') and not tgisinternal and tgenabled = 'O') as daily_guards,
           (select count(*)::integer from weakness_definitions) as weaknesses,
           (select count(*)::integer from activity_weaknesses where is_published) as weakness_mappings,
           (select count(*)::integer from mistake_occurrences) as mistake_occurrences,
           (select count(*)::integer from mistake_practice_attempts) as mistake_practice_attempts,
           (select count(*)::integer from exercise_attempts a join activity_weaknesses m on m.activity_id = a.activity_id and m.content_version = a.content_version left join mistake_occurrences o on o.attempt_id = a.id and o.weakness_id = m.weakness_id where not a.is_correct and o.id is null) as missing_mistakes,
           (select count(*)::integer from learner_profiles) as profiles,
-          (select count(*)::integer from users where email like 'phase3-e2e-%@example.test' or email like 'phase4-e2e-%@example.test') as test_fixtures,
+          (select count(*)::integer from users where email like 'phase3-e2e-%@example.test' or email like 'phase4-e2e-%@example.test' or email like 'phase8-e2e-%@example.test') as test_fixtures,
           (select count(*)::integer from exercise_attempts) as attempts,
           (select count(distinct type)::integer from lesson_activities where type not in ('explanation', 'reflection')) as exercise_types,
           (select count(*)::integer from lessons where content_version <> 2) as outdated_lessons,
@@ -123,6 +127,8 @@ async function main() {
           ,(select count(*)::integer from (select user_id, sense_id from user_vocabulary where introduced_at is not null union select user_id, sense_id from vocabulary_evidence) eligible left join review_cards c on c.user_id = eligible.user_id and c.sense_id = eligible.sense_id and c.kind = 'recognition' where c.id is null) as missing_review_cards
       `;
       if (
+        summary.invalid_daily_plans !== 0 ||
+        summary.daily_guards !== 4 ||
         summary.weaknesses !== 5 ||
         summary.weakness_mappings !== 8 ||
         summary.missing_mistakes !== 0 ||

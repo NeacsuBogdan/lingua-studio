@@ -1,6 +1,6 @@
 # Implementation roadmap
 
-Current state: **Phases 0-6 complete on main** at `a5438be55e04c49af47701d6b5474aa51de03853`. PR #5 passed CI and real-owner validation, was marked ready and squash-merged. Phase 7 implementation is authorized on `feat/phase-7-mistake-engine`; local validation precedes the explicit Neon gate.
+Current state: **Phases 0-7 complete on main**. PR #6 passed CI and real-owner validation, was marked ready and squash-merged at `4994af887a7eb117c0772d51586aa59f2389c1b5`. Security-maintenance PR #7 passed CI and merged at current main `99d70ac4b3b96ec39fcaa85816e2d433810649ef`; main CI #20 passed. Phase 8 is authorized for local implementation and validation on `feat/phase-8-daily-learning`; Neon changes and push/PR require later authorization. Phase 9 is not authorized.
 
 | Phase | Scope                           | Status      |
 | ----- | ------------------------------- | ----------- |
@@ -11,8 +11,8 @@ Current state: **Phases 0-6 complete on main** at `a5438be55e04c49af47701d6b5474
 | 4     | EXERCISE ENGINE                 | Completed   |
 | 5     | VOCABULARY SYSTEM               | Completed   |
 | 6     | SPACED REPETITION               | Completed   |
-| 7     | MISTAKE ENGINE                  | In progress |
-| 8     | DAILY LEARNING                  | Planned     |
+| 7     | MISTAKE ENGINE                  | Completed   |
+| 8     | DAILY LEARNING                  | In progress |
 | 9     | PLACEMENT TEST                  | Planned     |
 | 10    | DASHBOARD AND ANALYTICS         | Planned     |
 | 11    | GAMIFICATION                    | Planned     |
@@ -126,7 +126,7 @@ Phase 5 passed CI and real-owner manual validation. [PR #4](https://github.com/N
 - [x] Push, draft PR and green GitHub CI ([run #10](https://github.com/NeacsuBogdan/lingua-studio/actions/runs/36563220546))
 - [x] Real-owner manual Review/session, ratings, refresh/resume and persistence validation
 
-Phase 6 completed and merged in PR #5. Phase 7 is in progress; do not mark it complete before real-owner validation. Phase 8 remains out of scope.
+Phase 6 completed and merged in PR #5. Phase 7 subsequently passed real-owner validation and merged in PR #6. Phase 8 is the current local implementation phase.
 
 ## Phase 7 acceptance
 
@@ -137,9 +137,26 @@ Phase 6 completed and merged in PR #5. Phase 7 is in progress; do not mark it co
 - [x] Authenticated Mistake Center, weakness detail, corrective practice and Review count/link
 - [x] Domain and migration preservation tests in PGlite and local PostgreSQL 17
 - [x] Local build/lint/typecheck/format, clean migration generation and authenticated production E2E
-- [x] Explicitly authorized npm audit: 0 vulnerabilities; no dependency changes
+- [x] Original Phase 7 audit: 0 vulnerabilities; later security-maintenance results/policy documented in HANDOFF.md
 - [x] Authorized Neon development migration, weakness seed, first/repeat backfill and Phase 0–6 preservation checks
-- [x] Authorized push, [draft PR #6](https://github.com/NeacsuBogdan/lingua-studio/pull/6) and green [CI run #16](https://github.com/NeacsuBogdan/lingua-studio/actions/runs/36690674122)
-- [ ] Real-owner manual validation
+- [x] Authorized push, [PR #6](https://github.com/NeacsuBogdan/lingua-studio/pull/6) and green [CI run #16](https://github.com/NeacsuBogdan/lingua-studio/actions/runs/36690674122)
+- [x] Real-owner Mistake Center/history/corrective retry/recovery, Review integration, persistence, responsive/themes/keyboard validation
+- [x] Marked ready and squash-merged at `4994af887a7eb117c0772d51586aa59f2389c1b5`
 
-No Phase 8 daily queue or cross-system orchestration is included. Repeated means at least two recorded errors; recovered requires a successful corrective attempt strictly after the latest error. Lifetime recurrence remains visible. See ARCHITECTURE.md for the complete evidence semantics.
+Phase 7 itself introduces no daily queue or cross-system orchestration. Repeated means at least two recorded errors; recovered requires a successful corrective attempt strictly after the latest error. Lifetime recurrence remains visible. See ARCHITECTURE.md for the complete evidence semantics.
+
+## Phase 8 acceptance (local work; phase remains in progress)
+
+- [x] Additive relational Daily session/items migration; no existing content-version changes or Daily backfill
+- [x] Unique learner/language/local-day identity, server IANA date, snapshotted goal and timezone
+- [x] Deterministic `daily-v1` plan and documented estimates/balance across all six durations
+- [x] Due Review, reachable active mistakes and contiguous current lesson segments; real vocabulary/grammar focus
+- [x] Explicit preview/Start, stable targets, refresh/navigation persistence and owned source reconciliation
+- [x] Concurrent Start, replay safety, language isolation, local rollover/DST and stale unavailable tasks covered
+- [x] SHA-256 preservation of all 32 Phase 0–7 tables in PGlite and local PostgreSQL 17
+- [x] Final local clean install/lint/typecheck/format, 134 tests, production build, 16 authenticated/public E2E, clean generation and production audit (results in HANDOFF.md)
+- [ ] Separately authorized Neon development migration and Phase 0–7 preservation verification
+- [ ] Separately authorized push, draft PR and green GitHub CI
+- [ ] Real-owner Daily/manual validation: preview/Start, source flow, persistence, durations and responsive/themes/keyboard
+
+Daily completion means planned work was performed, not material mastery. Explicitly unavailable tasks do not receive performed-work credit. No browser grading/FSRS duplication, fake tasks, placement/CEFR inference, full analytics, XP, streaks or adaptive optimization is introduced. Phase 9 is not authorized. Phase 8 must not be marked complete before its owner-manual gate.

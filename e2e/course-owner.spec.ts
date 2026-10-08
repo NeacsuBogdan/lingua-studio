@@ -7,6 +7,10 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { databaseTlsOptions } from '../src/lib/database-tls';
 import * as schema from '../src/server/db/schema';
+import type { getDb } from '../src/server/db/client';
+import { startLesson, advanceLesson } from '../src/server/course/repository';
+import { submitExercise } from '../src/server/exercises/repository';
+import { ensureReviewCard } from '../src/server/review/repository';
 
 const enabled = process.env.E2E_OWNER_COURSE === '1';
 const fixtureOwnerId = '987654321012345678';
@@ -24,7 +28,7 @@ test.skip(
   'The learning flow checks desktop and mobile sizes in one isolated session.',
 );
 
-test.beforeAll(async () => {
+test.beforeEach(async () => {
   try {
     nextEnv.loadEnvConfig(process.cwd());
     const url = process.env.DATABASE_URL;
@@ -63,7 +67,7 @@ test.beforeAll(async () => {
   }
 });
 
-test.afterAll(async () => {
+test.afterEach(async () => {
   if (!sql) return;
   try {
     if (userId)
@@ -73,6 +77,312 @@ test.afterAll(async () => {
   } finally {
     await sql.end();
   }
+});
+
+test('Daily preview, bounded real work and completion persist securely', async ({
+  page,
+  browser,
+  request,
+}, testInfo) => {
+  test.setTimeout(120000);
+  const fixture = drizzle(sql!, { schema });
+  const db = fixture as unknown as ReturnType<typeof getDb>;
+  await fixture
+    .update(schema.learnerProfiles)
+    .set({ dailyMinutes: 5 })
+    .where(eq(schema.learnerProfiles.userId, userId!));
+  await startLesson(db, userId!, 'en-b1-present-perfect');
+  await advanceLesson(db, userId!, 'en-b1-present-perfect', 0, 2);
+  await submitExercise(db, userId!, 'en', {
+    lessonId: 'en-b1-present-perfect',
+    activityId: 'en-b1-present-perfect-choice',
+    contentVersion: 2,
+    submissionId: randomUUID(),
+    answer: { type: 'multiple_choice', optionId: 'have-sent' },
+  });
+  const senses = await fixture.select().from(schema.vocabularySenses).limit(8);
+  for (const sense of senses)
+    await ensureReviewCard(db, userId!, sense.id, new Date(Date.now() - 60000));
+  const cookie = (value: string) => ({
+    name: 'better-auth.session_token',
+    value: encodeURIComponent(
+      value + '.' + createHmac('sha256', secret).update(value).digest('base64'),
+    ),
+    domain: '127.0.0.1',
+    path: '/',
+    httpOnly: true,
+    sameSite: 'Lax' as const,
+  });
+  await page.context().addCookies([cookie(token)]);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.name));
+  const headers = { Origin: 'http://127.0.0.1:3100' };
+  const api = page.context().request;
+  expect(
+    (await request.post('/api/daily/start', { headers, data: {} })).status(),
+  ).toBe(401);
+  expect((await api.get('/api/daily/start')).status()).toBe(405);
+  expect(
+    (
+      await api.post('/api/daily/start', {
+        headers: { Origin: 'https://untrusted.example' },
+        data: {},
+      })
+    ).status(),
+  ).toBe(403);
+  for (const forged of [
+    { userId: randomUUID() },
+    { sessionId: randomUUID() },
+    { targetMinutes: 60 },
+    { completedMinutes: 5 },
+    { items: [] },
+    { sourceIds: [] },
+    { plannerVersion: 'forged' },
+  ])
+    expect(
+      (await api.post('/api/daily/start', { headers, data: forged })).status(),
+    ).toBe(400);
+  await page.goto('/');
+  await expect(
+    page.getByRole('heading', { name: 'Today’s goal', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('link', { name: 'Preview today’s plan' }).click();
+  await expect(
+    page.getByRole('heading', { name: '5-minute goal' }),
+  ).toBeVisible();
+  await page.reload();
+  expect(
+    await fixture
+      .select()
+      .from(schema.dailySessions)
+      .where(eq(schema.dailySessions.userId, userId!)),
+  ).toHaveLength(0);
+  async function inspect(state: string) {
+    for (const theme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme: theme });
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      for (const width of [1280, 390, 320]) {
+        await page.setViewportSize({ width, height: 900 });
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true);
+        if (width === 320 || width === 1280)
+          await page.screenshot({
+            path: testInfo.outputPath(`daily-${state}-${width}-${theme}.png`),
+            fullPage: true,
+          });
+      }
+      const axe = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze();
+      expect(axe.violations).toEqual([]);
+    }
+  }
+  await inspect('preview');
+  const start = page.waitForResponse(
+    (r) =>
+      r.url().endsWith('/api/daily/start') && r.request().method() === 'POST',
+  );
+  await page.getByRole('button', { name: 'Start today’s plan' }).focus();
+  await page.keyboard.press('Enter');
+  const id = (await (await start).json()).sessionId;
+  await expect(
+    page.getByText('0/3 tasks complete', { exact: true }),
+  ).toBeVisible();
+  const repeated = await Promise.all([
+    api.post('/api/daily/start', { headers, data: {} }),
+    api.post('/api/daily/start', { headers, data: {} }),
+  ]);
+  expect(
+    await Promise.all(repeated.map(async (r) => (await r.json()).sessionId)),
+  ).toEqual([id, id]);
+  const savedItems = await fixture
+    .select()
+    .from(schema.dailySessionItems)
+    .where(eq(schema.dailySessionItems.sessionId, id))
+    .orderBy(schema.dailySessionItems.position);
+  expect(savedItems.map((i) => i.kind)).toEqual([
+    'review',
+    'mistake',
+    'lesson',
+  ]);
+  await fixture
+    .update(schema.learnerProfiles)
+    .set({ dailyMinutes: 20 })
+    .where(eq(schema.learnerProfiles.userId, userId!));
+  await page.reload();
+  await expect(
+    page.getByRole('heading', { name: '5-minute goal' }),
+  ).toBeVisible();
+  await inspect('started');
+  await page.getByRole('link', { name: 'Continue today’s plan' }).click();
+  await page.getByRole('button', { name: 'Start review' }).click();
+  await expect(page).toHaveURL(/\/review\/session\/[0-9a-f-]+$/);
+  const reviewUrl = page.url();
+  const reviewTarget = savedItems.find((i) => i.kind === 'review')!.targetCount;
+  for (let i = 0; i < reviewTarget; i++) {
+    await page.getByRole('button', { name: 'Show answer' }).click();
+    await page.getByRole('button', { name: /Good/ }).click();
+  }
+  await page.getByRole('link', { name: 'Today', exact: true }).click();
+  await expect(
+    page.getByText('1/3 tasks complete', { exact: true }),
+  ).toBeVisible();
+  await page.getByRole('link', { name: 'Continue today’s plan' }).click();
+  await page
+    .getByRole('radio', { name: 'I have sent the email yesterday.' })
+    .check();
+  const submitted = page.waitForRequest(
+    (r) => r.url().endsWith('/api/mistakes/practice') && r.method() === 'POST',
+  );
+  await page.getByRole('button', { name: 'Check answer' }).click();
+  const payload = (await submitted).postDataJSON();
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  expect(
+    (
+      await api.post('/api/mistakes/practice', { headers, data: payload })
+    ).status(),
+  ).toBe(200);
+  await page.getByRole('link', { name: 'Today', exact: true }).click();
+  await expect(
+    page.getByText('2/3 tasks complete', { exact: true }),
+  ).toBeVisible();
+  await page.getByRole('link', { name: 'Continue today’s plan' }).click();
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await page
+    .getByRole('radio', { name: 'I sent the email yesterday.', exact: true })
+    .check();
+  await page.getByRole('button', { name: 'Check answer' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Correct', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await page.getByRole('link', { name: 'Today', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Today’s plan is complete.' }),
+  ).toBeVisible();
+  await expect(
+    page.getByText('3/3 tasks complete', { exact: true }),
+  ).toBeVisible();
+  await inspect('complete');
+  const [completed] = await fixture
+    .select()
+    .from(schema.dailySessions)
+    .where(eq(schema.dailySessions.id, id));
+  expect(completed.completedAt).not.toBeNull();
+  await page.goto(reviewUrl);
+  await expect(page.getByRole('button', { name: 'Show answer' })).toBeVisible();
+  await page.getByRole('button', { name: 'Show answer' }).click();
+  await page.getByRole('button', { name: /Easy/ }).click();
+  await page.goto('/daily');
+  expect(
+    (
+      await fixture
+        .select()
+        .from(schema.dailySessions)
+        .where(eq(schema.dailySessions.id, id))
+    )[0],
+  ).toEqual(completed);
+  expect(
+    await fixture
+      .select()
+      .from(schema.mistakePracticeAttempts)
+      .where(eq(schema.mistakePracticeAttempts.userId, userId!)),
+  ).toHaveLength(1);
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await expect(page).toHaveURL('/sign-in');
+  await page.goto('/daily');
+  await expect(page).toHaveURL('/sign-in');
+  const nextToken = randomBytes(32).toString('hex');
+  await fixture.insert(schema.sessions).values({
+    userId: userId!,
+    token: nextToken,
+    expiresAt: new Date(Date.now() + 1800000),
+  });
+  await page.context().addCookies([cookie(nextToken)]);
+  await page.goto('/daily');
+  await expect(
+    page.getByText('3/3 tasks complete', { exact: true }),
+  ).toBeVisible();
+  expect(
+    (
+      await fixture
+        .select()
+        .from(schema.dailySessionItems)
+        .where(eq(schema.dailySessionItems.sessionId, id))
+    ).map((i) => [i.id, i.kind, i.targetCount]),
+  ).toEqual(savedItems.map((i) => [i.id, i.kind, i.targetCount]));
+  const [other] = await fixture
+    .insert(schema.users)
+    .values({
+      email: `phase8-e2e-${randomUUID()}@example.test`,
+      name: 'Isolated Daily learner',
+      emailVerified: true,
+    })
+    .returning();
+  const otherContext = await browser.newContext({
+    baseURL: 'http://127.0.0.1:3100',
+  });
+  try {
+    await fixture
+      .update(schema.accounts)
+      .set({ accountId: 'phase8-inactive-fixture' })
+      .where(eq(schema.accounts.userId, userId!));
+    await fixture.insert(schema.accounts).values({
+      userId: other.id,
+      providerId: 'github',
+      accountId: fixtureOwnerId,
+    });
+    await fixture.insert(schema.learnerProfiles).values({
+      userId: other.id,
+      nativeLanguage: 'ro',
+      learningLanguage: 'en',
+      dailyMinutes: 20,
+    });
+    const otherToken = randomBytes(32).toString('hex');
+    await fixture.insert(schema.sessions).values({
+      userId: other.id,
+      token: otherToken,
+      expiresAt: new Date(Date.now() + 1800000),
+    });
+    await otherContext.addCookies([cookie(otherToken)]);
+    const otherPage = await otherContext.newPage();
+    await otherPage.goto('/daily');
+    await expect(
+      otherPage.getByRole('heading', { name: '20-minute goal' }),
+    ).toBeVisible();
+    await expect(
+      otherPage.getByRole('button', { name: 'Start today’s plan' }),
+    ).toBeVisible();
+    expect(
+      (
+        await otherContext.request.post('/api/daily/start', {
+          headers,
+          data: { sessionId: id },
+        })
+      ).status(),
+    ).toBe(400);
+    await otherPage.getByRole('button', { name: 'Start today’s plan' }).click();
+    await expect(
+      otherPage.getByText('0/1 tasks complete', { exact: true }),
+    ).toBeVisible();
+    const [otherPlan] = await fixture
+      .select()
+      .from(schema.dailySessions)
+      .where(eq(schema.dailySessions.userId, other.id));
+    expect(otherPlan.id).not.toBe(id);
+    expect(otherPlan.targetMinutes).toBe(20);
+  } finally {
+    await otherContext.close();
+    await fixture.delete(schema.users).where(eq(schema.users.id, other.id));
+    await fixture
+      .update(schema.accounts)
+      .set({ accountId: fixtureOwnerId })
+      .where(eq(schema.accounts.userId, userId!));
+  }
+  expect(errors).toEqual([]);
 });
 
 test('owner practises all seven exercise types and retains progress securely', async ({

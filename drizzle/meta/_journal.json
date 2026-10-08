@@ -57,6 +57,13 @@
       "when": 1790752439371,
       "tag": "0007_red_shockwave",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791456435290,
+      "tag": "0008_striped_amphibian",
+      "breakpoints": true
     }
   ]
 }
